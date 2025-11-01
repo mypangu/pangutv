@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="description" content="Watch Live TV Channels - Stream your favorite channels anytime, anywhere">
+    <title>Live TV Streaming</title>
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkxpdmUgVFYgU3RyZWFtaW5nIiwKICAic2hvcnRfbmFtZSI6ICJMaXZlIFRWIiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMxYTFhMmUiLAogICJ0aGVtZV9jb2xvciI6ICIjMWExYTJlIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyUzRSUzQ3JlY3Qgd2lkdGg9JzE5MicgaGVpZ2h0PScxOTInIGZpbGw9JyNmZjAwNzUnLyUzRSUzQ3BhdGggZD0nTTYwIDYwaDcydjcySDYweicgZmlsbD0nJTIzZmZmJy8lM0UlM0MvcnZnJTNFIiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .language-selector {
+            position: relative;
+        }
+
+        .language-selector select {
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            min-width: 150px;
+        }
+
+        .language-selector select:focus {
+            outline: none;
+            border-color: #ff0075;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .language-selector select option {
+            background: #1a1a2e;
+            color: #fff;
+            padding: 0.5rem;
+        }
+
+        .language-selector::after {
+            content: '▼';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff0075, #ff4d00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .search-bar {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: #ff0075;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .search-bar input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .filter-section {
+            background: rgba(22, 33, 62, 0.8);
+            padding: 1rem 1.5rem;
+            display: none;
+        }
+
+        .filter-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-bar {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            margin-bottom: 1rem;
+        }
+
+        .filter-bar:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-chips {
+            display: inline-flex;
+            gap: 0.75rem;
+            min-width: min-content;
+        }
+
+        .filter-chip {
+            padding: 0.5rem 1.25rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .filter-chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .filter-chip.active {
+            background: linear-gradient(135deg, #ff0075, #ff4d00);
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .category-section {
+            margin-bottom: 3rem;
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid rgba(255, 0, 117, 0.3);
+            display: inline-block;
+        }
+
+        .channels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .channel-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .channel-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 0, 117, 0.3);
+            border-color: rgba(255, 0, 117, 0.5);
+        }
+
+        .channel-logo {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: contain;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+        }
+
+        .channel-info {
+            padding: 1rem;
+        }
+
+        .channel-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .channel-meta {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ff0075, #ff4d00);
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            box-shadow: 0 10px 40px rgba(255, 0, 117, 0.5);
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            z-index: 1000;
+            animation: slideUp 0.5s ease;
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-prompt button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #fff;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .install-prompt button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .channels-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 1rem;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .search-bar {
+                order: 3;
+                flex-basis: 100%;
+            }
+
+            .category-title {
+                font-size: 1.25rem;
+            }
+
+            .install-prompt {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                transform: none;
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">📺 Live TV</div>
+            <div class="header-controls">
+                <div class="language-selector">
+                    <select id="languageSelect">
+                        <option value="All">All Languages</option>
+                    </select>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Search channels...">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="filter-section">
+        <div class="filter-label">Language</div>
+        <div class="filter-bar">
+            <div class="filter-chips" id="languageChips"></div>
+        </div>
+        <div class="filter-label" style="margin-top: 1rem;">Category</div>
+        <div class="filter-bar">
+            <div class="filter-chips" id="categoryChips"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="channelsContainer"></div>
+        <div id="loading" class="loading">Loading channels...</div>
+        <div id="noResults" class="no-results" style="display: none;">No channels found</div>
+    </div>
+
+    <div class="install-prompt" id="installPrompt">
+        <span>Install app for better experience</span>
+        <button id="installBtn">Install</button>
+        <button id="dismissBtn">Dismiss</button>
+    </div>
+
+    <script>
+        let allChannels = [];
+        let filteredChannels = [];
+        let selectedLanguage = 'All';
+        let searchQuery = '';
+        let deferredPrompt;
+
+        // PWA Installation
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installPrompt').classList.add('show');
+        });
+
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                document.getElementById('installPrompt').classList.remove('show');
+            }
+        });
+
+        document.getElementById('dismissBtn').addEventListener('click', () => {
+            document.getElementById('installPrompt').classList.remove('show');
+        });
+
+        // Load saved language preference
+        function loadSavedLanguage() {
+            const saved = localStorage.getItem('selectedLanguage');
+            if (saved) {
+                selectedLanguage = saved;
+            }
+        }
+
+        // Save language preference
+        function saveLanguage(language) {
+            localStorage.setItem('selectedLanguage', language);
+        }
+
+        // Use ID directly - no extraction needed
+        function getChannelId(id) {
+            return id;
+        }
+
+        // Load channels from JSON file
+        async function loadChannels() {
+            try {
+                const response = await fetch('channel_details.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load channels');
+                }
+                const data = await response.json();
+                allChannels = data;
+                filteredChannels = [...allChannels];
+                loadSavedLanguage();
+                populateLanguageDropdown();
+                filterChannels();
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                console.error('Error loading channels:', error);
+                document.getElementById('loading').innerHTML = 'Error loading channels. Please check if channel_details.json exists.';
+                document.getElementById('loading').style.color = '#ff0075';
+            }
+        }
+
+        // Get unique languages
+        function getLanguages() {
+            const languages = new Set(allChannels.map(ch => ch.language).filter(Boolean));
+            return ['All', ...Array.from(languages).sort()];
+        }
+
+        // Get unique categories
+        function getCategories() {
+            const categories = new Set(allChannels.map(ch => ch.channel).filter(Boolean));
+            return ['All', ...Array.from(categories).sort()];
+        }
+
+        // Populate language dropdown
+        function populateLanguageDropdown() {
+            const languages = getLanguages();
+            const select = document.getElementById('languageSelect');
+            select.innerHTML = languages.map(language => 
+                `<option value="${language}" ${language === selectedLanguage ? 'selected' : ''}>
+                    ${language === 'All' ? 'All Languages' : language}
+                </option>`
+            ).join('');
+
+            select.addEventListener('change', (e) => {
+                selectedLanguage = e.target.value;
+                saveLanguage(selectedLanguage);
+                filterChannels();
+            });
+        }
+
+        // Filter channels
+        function filterChannels() {
+            filteredChannels = allChannels.filter(channel => {
+                const matchesLanguage = selectedLanguage === 'All' || channel.language === selectedLanguage;
+                const matchesSearch = channel.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    (channel.language && channel.language.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                                    (channel.channel && channel.channel.toLowerCase().includes(searchQuery.toLowerCase()));
+                return matchesLanguage && matchesSearch;
+            });
+            renderChannels();
+        }
+
+        // Group channels by category
+        function groupByCategory(channels) {
+            return channels.reduce((acc, channel) => {
+                const category = channel.channel || 'Other';
+                if (!acc[category]) {
+                    acc[category] = [];
+                }
+                acc[category].push(channel);
+                return acc;
+            }, {});
+        }
+
+        // Render channels
+        function renderChannels() {
+            const container = document.getElementById('channelsContainer');
+            const noResults = document.getElementById('noResults');
+
+            if (filteredChannels.length === 0) {
+                container.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            const groupedChannels = groupByCategory(filteredChannels);
+
+            container.innerHTML = Object.keys(groupedChannels).sort().map(category => `
+                <div class="category-section">
+                    <h2 class="category-title">${category}</h2>
+                    <div class="channels-grid">
+                        ${groupedChannels[category].map(channel => `
+                            <div class="channel-card" data-id="${channel.id}">
+                                <img src="${channel.logo}" alt="${channel.title}" class="channel-logo" 
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect width=%22300%22 height=%22200%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2220%22%3E${channel.title}%3C/text%3E%3C/svg%3E'">
+                                <div class="channel-info">
+                                    <div class="channel-title">${channel.title}</div>
+                                    <div class="channel-meta">
+                                        <span class="meta-badge">${channel.language || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            // Add click handlers
+            container.querySelectorAll('.channel-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const id = card.dataset.id;
+                    window.location.href = `player.html?id=${id}`;
+                });
+            });
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            filterChannels();
+        });
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgZnVuY3Rpb24oZXZlbnQpIHsKICBldmVudC53YWl0VW50aWwoc2VsZi5za2lwV2FpdGluZygpKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2FjdGl2YXRlJywgZnVuY3Rpb24oZXZlbnQpIHsKICBldmVudC53YWl0VW50aWwoc2VsZi5jbGllbnRzLmNsYWltKCkpOwp9KTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcignZmV0Y2gnLCBmdW5jdGlvbihldmVudCkgewogIGV2ZW50LnJlc3BvbmRXaXRoKGZldGNoKGV2ZW50LnJlcXVlc3QpKTsKfSk7')
+                .catch(() => {});
+        }
+
+        // Initialize app
+        loadChannels();
+    </script>
+</body>
+</html>
