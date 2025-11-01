@@ -79,12 +79,12 @@
         }
 
         .controls-overlay {
-            position: absolute;
+            position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
-            padding: 2rem 2rem 1.5rem;
+            padding: 2rem 2rem max(1.5rem, env(safe-area-inset-bottom));
             transform: translateY(0);
             opacity: 1;
             transition: opacity 0.3s ease, transform 0.3s ease;
@@ -224,12 +224,12 @@
         }
 
         .top-bar {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
             background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
-            padding: 1.5rem 2rem;
+            padding: max(1.5rem, env(safe-area-inset-top)) 2rem 1.5rem;
             display: flex;
             align-items: center;
             gap: 1rem;
@@ -485,6 +485,27 @@
         function goBack() {
             window.history.back();
         }
+		
+// Toggle orientation (mobile only)
+function toggleOrientation() {
+    if (!screen.orientation) return; // Not supported
+    
+    const currentOrientation = screen.orientation.type;
+    
+    try {
+        if (currentOrientation.includes('portrait')) {
+            screen.orientation.lock('landscape').catch(err => {
+                console.log('Orientation lock not supported:', err);
+            });
+        } else {
+            screen.orientation.lock('portrait').catch(err => {
+                console.log('Orientation lock not supported:', err);
+            });
+        }
+    } catch (error) {
+        console.log('Orientation change failed:', error);
+    }
+}		
 
         // Toggle fullscreen
         function toggleFullscreen() {
@@ -537,10 +558,36 @@
                     break;
             }
         });
+		
+// Click/tap to toggle controls
+let lastTapTime = 0;
+document.getElementById('playerContainer').addEventListener('click', (e) => {
+    // Ignore clicks on buttons
+    if (e.target.closest('button')) return;
+    
+    const currentTime = new Date().getTime();
+    const tapGap = currentTime - lastTapTime;
+    
+    // Double tap detection (less than 300ms between taps)
+    if (tapGap < 300 && tapGap > 0) {
+        toggleOrientation();
+        lastTapTime = 0; // Reset to prevent triple tap
+    } else {
+        // Single tap - toggle controls
+        const controlsHidden = document.getElementById('controlsOverlay').classList.contains('hidden');
+        if (controlsHidden) {
+            resetHideControlsTimer();
+        } else {
+            hideControls();
+            clearTimeout(hideControlsTimeout);
+        }
+        lastTapTime = currentTime;
+    }
+});		
 
         // Mouse movement detection
         document.addEventListener('mousemove', resetHideControlsTimer);
-        document.addEventListener('touchstart', resetHideControlsTimer);
+        document.addEventListener('touchmove', resetHideControlsTimer);
 
         // Button event listeners
         document.getElementById('backBtn').addEventListener('click', goBack);
@@ -559,8 +606,11 @@
             showError('No channel ID provided');
         }
 
-        // Start auto-hide timer
-        resetHideControlsTimer();
+// Show controls initially for 3 seconds
+showControls();
+hideControlsTimeout = setTimeout(() => {
+    hideControls();
+}, 1000);
     </script>
 </body>
 </html>
