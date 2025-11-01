@@ -1629,7 +1629,8 @@
         "title": "Hosanna TV",
         "channel": "Religious",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Hosanna_TV.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Hosanna_TV.png",
+		"logo-bg-color": "#000000"
     },
     {
         "platform": "iframe",
@@ -4805,7 +4806,8 @@
         "title": "Sana Plus",
         "channel": "Music",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/sanaplus.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/sanaplus.png",
+		"logo-bg-color": "#1d4fcc"
     },
     {
         "platform": "iframe",
@@ -5877,7 +5879,8 @@
         "title": "Star Sports 1 Tamil HD",
         "channel": "Sports",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Star_Sports_1_Tamil_HD.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Star_Sports_1_Tamil_HD.png",
+		"logo-bg-color": "#000000"
     },
     {
         "platform": "iframe",
@@ -5885,7 +5888,8 @@
         "title": "Star Sports 2 Tamil HD",
         "channel": "Sports",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Star_Sports2_Tamil_HD.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Star_Sports2_Tamil_HD.png",
+		"logo-bg-color": "#000000"
     },
     {
         "platform": "iframe",
@@ -9101,7 +9105,8 @@
         "title": "Travelxp Tamil",
         "channel": "Lifestyle",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Travel_XP_Tamil.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Travel_XP_Tamil.png",
+		"logo-bg-color": "#da243d"
     },
     {
         "platform": "iframe",

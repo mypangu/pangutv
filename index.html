@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#1a1a2e">
     <meta name="description" content="Watch Live TV Channels - Stream your favorite channels anytime, anywhere">
     <title>Live TV Streaming</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkxpdmUgVFYgU3RyZWFtaW5nIiwKICAic2hvcnRfbmFtZSI6ICJMaXZlIFRWIiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMxYTFhMmUiLAogICJ0aGVtZV9jb2xvciI6ICIjMWExYTJlIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyUzRSUzQ3JlY3Qgd2lkdGg9JzE5MicgaGVpZ2h0PScxOTInIGZpbGw9JyNmZjAwNzUnLyUzRSUzQ3BhdGggZD0nTTYwIDYwaDcydjcySDYweicgZmlsbD0nJTIzZmZmJy8lM0UlM0MvcnZnJTNFIiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0KfQ==">
+    <link rel="manifest" href="manifest.json">
     <style>
         * {
             margin: 0;
@@ -225,10 +225,10 @@
 
         .channel-logo {
             width: 100%;
-            aspect-ratio: 16/9;
-            object-fit: contain;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 1rem;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            background: #ffffff;
+            padding: 0.5rem;
         }
 
         .channel-info {
@@ -528,6 +528,7 @@
                         ${groupedChannels[category].map(channel => `
                             <div class="channel-card" data-id="${channel.id}">
                                 <img src="${channel.logo}" alt="${channel.title}" class="channel-logo" 
+									style="background-color: ${channel['logo-bg-color'] || '#ffffff'};" 
                                      onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect width=%22300%22 height=%22200%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2220%22%3E${channel.title}%3C/text%3E%3C/svg%3E'">
                                 <div class="channel-info">
                                     <div class="channel-title">${channel.title}</div>
@@ -557,14 +558,20 @@
         });
 
         // Register Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgZnVuY3Rpb24oZXZlbnQpIHsKICBldmVudC53YWl0VW50aWwoc2VsZi5za2lwV2FpdGluZygpKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2FjdGl2YXRlJywgZnVuY3Rpb24oZXZlbnQpIHsKICBldmVudC53YWl0VW50aWwoc2VsZi5jbGllbnRzLmNsYWltKCkpOwp9KTsKCnNlbGYuYWRkRXZlbnRMaXN0ZW5lcignZmV0Y2gnLCBmdW5jdGlvbihldmVudCkgewogIGV2ZW50LnJlc3BvbmRXaXRoKGZldGNoKGV2ZW50LnJlcXVlc3QpKTsKfSk7')
-                .catch(() => {});
-        }
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', function() {
+				navigator.serviceWorker.register('/sw.js')
+				.then(function(registration) {
+					console.log('ServiceWorker registered successfully:', registration.scope);
+				})
+				.catch(function(error) {
+					console.log('ServiceWorker registration failed:', error);
+				});
+			});
+		}
 
         // Initialize app
         loadChannels();
     </script>
 </body>
-
 </html>
