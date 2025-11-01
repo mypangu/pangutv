@@ -99,21 +99,67 @@
             background-clip: text;
         }
 
-        .search-bar {
-            flex: 1;
-            position: relative;
-        }
+.search-bar {
+    flex: 1;
+    position: relative;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
 
-        .search-bar input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-        }
+.mic-btn {
+    background: linear-gradient(135deg, #ff0075, #ff4d00);
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.mic-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(255, 0, 117, 0.5);
+}
+
+.mic-btn:active {
+    transform: scale(0.95);
+}
+
+.mic-btn.listening {
+    animation: pulse 1.5s infinite;
+    background: linear-gradient(135deg, #00ff87, #00d4ff);
+}
+
+.mic-icon {
+    font-size: 1.3rem;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 255, 135, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(0, 255, 135, 0);
+    }
+}
+
+.search-bar input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
 
         .search-bar input:focus {
             outline: none;
@@ -358,9 +404,12 @@
                         <option value="All">All Languages</option>
                     </select>
                 </div>
-                <div class="search-bar">
-                    <input type="text" id="searchInput" placeholder="Search channels...">
-                </div>
+				<div class="search-bar">
+					<input type="text" id="searchInput" placeholder="Search channels or say channel name...">
+					<button id="micBtn" class="mic-btn" title="Voice Search">
+						<span class="mic-icon">🎤</span>
+					</button>
+				</div>
             </div>
         </div>
     </header>
@@ -382,38 +431,86 @@
         <div id="noResults" class="no-results" style="display: none;">No channels found</div>
     </div>
 
-    <div class="install-prompt" id="installPrompt">
+    <div class="install-prompt" id="installPrompt" style="display: none;">
         <span>Install app for better experience</span>
         <button id="installBtn">Install</button>
         <button id="dismissBtn">Dismiss</button>
     </div>
 
     <script>
-        let allChannels = [];
-        let filteredChannels = [];
-        let selectedLanguage = 'Tamil';
-        let searchQuery = '';
-        let deferredPrompt;
+let allChannels = [];
+let filteredChannels = [];
+let selectedLanguage = 'All';
+let searchQuery = '';
+let deferredPrompt;
 
-        // PWA Installation
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('installPrompt').classList.add('show');
-        });
+// PWA Install Prompt Management
+const INSTALL_DISMISSED_KEY = 'installPromptDismissed';
 
-        document.getElementById('installBtn').addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-                document.getElementById('installPrompt').classList.remove('show');
+function hasUserDismissedInstall() {
+    return localStorage.getItem(INSTALL_DISMISSED_KEY) === 'true';
+}
+
+function saveInstallDismissed() {
+    localStorage.setItem(INSTALL_DISMISSED_KEY, 'true');
+}
+
+// Hide prompt by default
+const installPromptEl = document.getElementById('installPrompt');
+if (installPromptEl) {
+    installPromptEl.style.display = 'none';
+}
+
+// PWA Installation
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Only show if user hasn't dismissed AND app not installed
+    if (!hasUserDismissedInstall() && !window.matchMedia('(display-mode: standalone)').matches) {
+        if (installPromptEl) {
+            installPromptEl.style.display = 'flex';
+            setTimeout(() => {
+                installPromptEl.classList.add('show');
+            }, 100);
+        }
+    }
+});
+
+const installBtn = document.getElementById('installBtn');
+if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'dismissed') {
+                saveInstallDismissed();
             }
-        });
+            
+            deferredPrompt = null;
+            if (installPromptEl) {
+                installPromptEl.classList.remove('show');
+                setTimeout(() => {
+                    installPromptEl.style.display = 'none';
+                }, 500);
+            }
+        }
+    });
+}
 
-        document.getElementById('dismissBtn').addEventListener('click', () => {
-            document.getElementById('installPrompt').classList.remove('show');
-        });
+const dismissBtn = document.getElementById('dismissBtn');
+if (dismissBtn) {
+    dismissBtn.addEventListener('click', () => {
+        saveInstallDismissed();
+        if (installPromptEl) {
+            installPromptEl.classList.remove('show');
+            setTimeout(() => {
+                installPromptEl.style.display = 'none';
+            }, 500);
+        }
+    });
+}
 
         // Load saved language preference
         function loadSavedLanguage() {
@@ -570,8 +667,169 @@
 			});
 		}
 
-        // Initialize app
-        loadChannels();
+// ============================================
+// VOICE SEARCH - WITH SMART ERROR HANDLING
+// ============================================
+
+const micBtn = document.getElementById('micBtn');
+const searchInput = document.getElementById('searchInput');
+
+if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+    
+    let recognition = null;
+    let isListening = false;
+    let hasShownNetworkError = false;
+    
+    try {
+        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    } catch (e) {
+        console.error('Cannot create speech recognition:', e);
+        micBtn.style.display = 'none';
+    }
+    
+    if (recognition) {
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        
+        micBtn.addEventListener('click', async (e) => {
+            // If already disabled, show message
+            if (hasShownNetworkError) {
+                e.preventDefault();
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0,0,0,0.9);
+                    color: white;
+                    padding: 0.75rem 1.5rem;
+                    border-radius: 25px;
+                    font-size: 0.9rem;
+                    z-index: 10000;
+                `;
+                toast.textContent = '🚫 Voice search not available on this network';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+                return;
+            }
+            
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+            } catch (error) {
+                alert('🎤 Please allow microphone access');
+                return;
+            }
+            
+            const langMap = {
+                'Tamil': 'ta-IN',
+                'Hindi': 'hi-IN',
+                'Telugu': 'te-IN',
+                'Malayalam': 'ml-IN',
+                'Kannada': 'kn-IN',
+                'English': 'en-US',
+                'Bengali': 'bn-IN',
+                'Marathi': 'mr-IN',
+                'Gujarati': 'gu-IN',
+                'Punjabi': 'pa-IN'
+            };
+            
+            recognition.lang = (selectedLanguage !== 'All' && langMap[selectedLanguage]) 
+                ? langMap[selectedLanguage] 
+                : 'en-US';
+            
+            try {
+                recognition.start();
+                isListening = true;
+                micBtn.classList.add('listening');
+                searchInput.placeholder = '🎤 Listening...';
+            } catch (e) {
+                console.error('Start failed:', e);
+            }
+        });
+        
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            searchInput.value = transcript;
+            searchQuery = transcript;
+            filterChannels();
+            console.log('✅ Got:', transcript);
+        };
+        
+        recognition.onerror = (event) => {
+            if (event.error === 'network') {
+                if (!hasShownNetworkError) {
+                    hasShownNetworkError = true;
+                    
+                    searchInput.value = '';
+                    searchInput.placeholder = '⚠️ Voice search blocked - Use text search';
+                    
+                    micBtn.style.background = 'linear-gradient(135deg, #666, #999)';
+                    micBtn.style.cursor = 'not-allowed';
+                    micBtn.title = 'Voice search is not available on your network';
+                    
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 80px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: linear-gradient(135deg, #ff4444, #cc0000);
+                        color: white;
+                        padding: 1rem 2rem;
+                        border-radius: 10px;
+                        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                        z-index: 10000;
+                        animation: slideDown 0.3s ease;
+                        max-width: 90%;
+                        text-align: center;
+                    `;
+                    notification.innerHTML = `
+                        <strong>⚠️ Voice Search Blocked</strong><br>
+                        <small>Speech recognition is blocked on your network. Please use text search.</small>
+                    `;
+                    
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.animation = 'slideUp 0.3s ease';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 5000);
+                }
+                
+            } else if (event.error === 'not-allowed') {
+                alert('🎤 Microphone access denied. Please allow and reload.');
+            } else if (event.error === 'no-speech') {
+                console.log('No speech detected');
+            } else if (event.error !== 'aborted') {
+                console.log('Error:', event.error);
+            }
+        };
+        
+        recognition.onend = () => {
+            isListening = false;
+            micBtn.classList.remove('listening');
+            if (!hasShownNetworkError) {
+                searchInput.placeholder = 'Search channels or say channel name...';
+            }
+        };
+    }
+    
+} else {
+    micBtn.style.display = 'none';
+    console.log('Speech recognition not supported');
+}
+
+// Initialize app
+loadChannels();
+
     </script>
 </body>
 </html>
