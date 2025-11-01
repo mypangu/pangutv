@@ -1,4 +1,4 @@
-const CACHE_VERSION = "0111250300";  
+const CACHE_VERSION = "0111250400";  
 const CACHE_NAME = `live-tv-cache-${CACHE_VERSION}`;
 const urlsToCache = [
   '/',

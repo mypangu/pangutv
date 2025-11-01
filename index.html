@@ -105,6 +105,7 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    min-width: 0;  /* Important for flex shrinking */
 }
 
 .mic-btn {
@@ -152,6 +153,7 @@
 
 .search-bar input {
     flex: 1;
+    min-width: 0;  /* Allow input to shrink */
     padding: 0.75rem 1rem;
     border: 2px solid rgba(255, 255, 255, 0.1);
     border-radius: 25px;
@@ -167,9 +169,10 @@
             background: rgba(255, 255, 255, 0.08);
         }
 
-        .search-bar input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
+.search-bar input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;  /* Slightly smaller placeholder */
+}
 
         .filter-section {
             background: rgba(22, 33, 62, 0.8);
@@ -365,33 +368,72 @@
         }
 
         @media (max-width: 768px) {
-            .channels-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 1rem;
-            }
+    .channels-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1rem;
+    }
 
-            .logo {
-                font-size: 1.25rem;
-            }
+    .logo {
+        font-size: 1.25rem;
+    }
 
-            .search-bar {
-                order: 3;
-                flex-basis: 100%;
-            }
+    .header-content {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
 
-            .category-title {
-                font-size: 1.25rem;
-            }
+    .header-controls {
+        width: 100%;
+        max-width: 100%;
+    }
 
-            .install-prompt {
-                bottom: 10px;
-                left: 10px;
-                right: 10px;
-                transform: none;
-                flex-direction: column;
-                text-align: center;
-            }
-        }
+    .language-selector {
+        flex-shrink: 0;
+    }
+
+    .language-selector select {
+        min-width: 120px;
+        font-size: 0.85rem;
+        padding: 0.65rem 2rem 0.65rem 0.75rem;
+    }
+
+    .search-bar {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .search-bar input {
+        font-size: 0.85rem;
+        padding: 0.65rem 0.75rem;
+    }
+
+    .search-bar input::placeholder {
+        font-size: 0.75rem;  /* Even smaller on mobile */
+    }
+
+    .mic-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+    }
+
+    .mic-icon {
+        font-size: 1.1rem;
+    }
+
+    .category-title {
+        font-size: 1.25rem;
+    }
+
+    .install-prompt {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        flex-direction: column;
+        text-align: center;
+    }
+}
     </style>
 </head>
 <body>
@@ -405,7 +447,7 @@
                     </select>
                 </div>
 				<div class="search-bar">
-					<input type="text" id="searchInput" placeholder="Search channels or say channel name...">
+					<input type="text" id="searchInput" placeholder="Search...">
 					<button id="micBtn" class="mic-btn" title="Voice Search">
 						<span class="mic-icon">🎤</span>
 					</button>
@@ -728,22 +770,8 @@ if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
                 return;
             }
             
-            const langMap = {
-                'Tamil': 'ta-IN',
-                'Hindi': 'hi-IN',
-                'Telugu': 'te-IN',
-                'Malayalam': 'ml-IN',
-                'Kannada': 'kn-IN',
-                'English': 'en-US',
-                'Bengali': 'bn-IN',
-                'Marathi': 'mr-IN',
-                'Gujarati': 'gu-IN',
-                'Punjabi': 'pa-IN'
-            };
-            
-            recognition.lang = (selectedLanguage !== 'All' && langMap[selectedLanguage]) 
-                ? langMap[selectedLanguage] 
-                : 'en-US';
+            // ALWAYS use English for voice search (easier for channel names)
+			recognition.lang = 'en-US';
             
             try {
                 recognition.start();
