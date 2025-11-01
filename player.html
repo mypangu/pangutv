@@ -18,6 +18,17 @@
             color: #fff;
             overflow: hidden;
         }
+		
+body.hide-cursor,
+body.hide-cursor * {
+    cursor: none !important;
+}
+
+body.hide-cursor .controls-overlay,
+body.hide-cursor .top-bar,
+body.hide-cursor button {
+    cursor: pointer !important;
+}		
 
         .player-container {
             position: relative;
@@ -40,6 +51,55 @@
             border: none;
             display: block;
         }
+		
+.touch-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    background: transparent;
+    pointer-events: auto;
+}
+
+.touch-layer.hidden {
+    pointer-events: none;
+}
+
+.hover-zone {
+    position: fixed;
+    z-index: 15;
+    pointer-events: auto;
+}
+
+.hover-zone.top {
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+}
+
+.hover-zone.bottom {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+}
+
+.hover-zone.left {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+}
+
+.hover-zone.right {
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+}		
 
         .loading-screen {
             position: absolute;
@@ -342,8 +402,16 @@
             <button class="btn" id="backToChannelsBtn" tabindex="3">Back to Channels</button>
         </div>
 
-        <!-- Video Player -->
-        <div class="video-wrapper" id="videoWrapper"></div>
+<!-- Video Player -->
+<div class="video-wrapper" id="videoWrapper">
+    <div class="touch-layer" id="touchLayer"></div>
+</div>
+
+<!-- Hover zones to detect mouse at edges -->
+<div class="hover-zone top" id="hoverTop"></div>
+<div class="hover-zone bottom" id="hoverBottom"></div>
+<div class="hover-zone left" id="hoverLeft"></div>
+<div class="hover-zone right" id="hoverRight"></div>
 
         <!-- Controls Overlay -->
         <div class="controls-overlay" id="controlsOverlay">
@@ -533,10 +601,12 @@ function toggleOrientation() {
             document.getElementById('topBar').classList.remove('hidden');
         }
 
-        function hideControls() {
-            document.getElementById('controlsOverlay').classList.add('hidden');
-            document.getElementById('topBar').classList.add('hidden');
-        }
+function hideControls() {
+    document.getElementById('controlsOverlay').classList.add('hidden');
+    document.getElementById('topBar').classList.add('hidden');
+    touchLayer.classList.remove('hidden');
+    document.body.classList.add('hide-cursor'); // Hide cursor
+}
 
         // Keyboard navigation (TV remote support)
         document.addEventListener('keydown', (e) => {
@@ -561,16 +631,25 @@ function toggleOrientation() {
 		
 // Click/tap to toggle controls
 let lastTapTime = 0;
-document.getElementById('playerContainer').addEventListener('click', (e) => {
-    // Ignore clicks on buttons
-    if (e.target.closest('button')) return;
+const touchLayer = document.getElementById('touchLayer');
+
+touchLayer.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     
     const currentTime = new Date().getTime();
     const tapGap = currentTime - lastTapTime;
     
     // Double tap detection (less than 300ms between taps)
     if (tapGap < 300 && tapGap > 0) {
-        toggleOrientation();
+        // Double tap - toggle orientation AND fullscreen
+        if (!document.fullscreenElement) {
+            document.getElementById('playerContainer').requestFullscreen().then(() => {
+                setTimeout(() => toggleOrientation(), 100);
+            }).catch(err => console.log('Fullscreen error:', err));
+        } else {
+            toggleOrientation();
+        }
         lastTapTime = 0; // Reset to prevent triple tap
     } else {
         // Single tap - toggle controls
@@ -583,11 +662,82 @@ document.getElementById('playerContainer').addEventListener('click', (e) => {
         }
         lastTapTime = currentTime;
     }
-});		
+});
 
-        // Mouse movement detection
-        document.addEventListener('mousemove', resetHideControlsTimer);
-        document.addEventListener('touchmove', resetHideControlsTimer);
+// Hide touch layer when controls are visible (so buttons are clickable)
+function showControls() {
+    document.getElementById('controlsOverlay').classList.remove('hidden');
+    document.getElementById('topBar').classList.remove('hidden');
+    touchLayer.classList.add('hidden');
+    document.body.classList.remove('hide-cursor'); // Show cursor
+}
+
+function hideControls() {
+    document.getElementById('controlsOverlay').classList.add('hidden');
+    document.getElementById('topBar').classList.add('hidden');
+    touchLayer.classList.remove('hidden');
+}		
+
+// Mouse movement detection
+let mouseMovementTimer = null;
+document.addEventListener('mousemove', (e) => {
+    clearTimeout(mouseMovementTimer);
+    mouseMovementTimer = setTimeout(() => {
+        resetHideControlsTimer();
+    }, 50); // Debounce to avoid too many calls
+});
+
+// Hover zones to show controls when mouse is at edges
+document.querySelectorAll('.hover-zone').forEach(zone => {
+    zone.addEventListener('mouseenter', () => {
+        resetHideControlsTimer();
+    });
+});
+
+// Detect mouse entering from outside (like from URL bar or taskbar)
+document.addEventListener('mouseenter', () => {
+    resetHideControlsTimer();
+});
+
+// Detect when mouse leaves the page area
+document.addEventListener('mouseleave', () => {
+    clearTimeout(hideControlsTimeout);
+    // Don't hide controls when mouse is outside
+});
+
+// Touch movement detection
+document.addEventListener('touchmove', resetHideControlsTimer);
+
+// Track mouse position to detect movement over iframe
+let lastMouseX = 0;
+let lastMouseY = 0;
+let mouseCheckInterval = null;
+
+function startMouseTracking() {
+    // Update mouse position whenever we can
+    document.addEventListener('mousemove', (e) => {
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+    });
+    
+    // Periodically check if mouse position changed
+    mouseCheckInterval = setInterval(() => {
+        // This won't detect movement over iframe, but will detect when mouse re-enters
+    }, 1000);
+}
+
+// Alternative: Use focus/blur to detect when iframe gets focus
+window.addEventListener('blur', () => {
+    // User might be interacting with iframe
+    clearTimeout(hideControlsTimeout);
+});
+
+window.addEventListener('focus', () => {
+    // User came back to main page
+    resetHideControlsTimer();
+});
+
+startMouseTracking();
 
         // Button event listeners
         document.getElementById('backBtn').addEventListener('click', goBack);
