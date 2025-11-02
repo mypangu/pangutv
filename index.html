@@ -690,11 +690,32 @@ if (dismissBtn) {
             });
         }
 
-        // Search functionality
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            searchQuery = e.target.value;
-            filterChannels();
-        });
+// Search functionality with URL sync
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchQuery = e.target.value;
+    filterChannels();
+    
+    // Update URL without page reload
+    updateSearchURL(searchQuery);
+});
+
+// Function to update URL
+function updateSearchURL(searchTerm) {
+    const url = new URL(window.location);
+    
+    if (searchTerm.trim()) {
+        // Add/update search parameter
+        url.searchParams.set('s', searchTerm);
+        document.title = `Search: ${searchTerm} - Live TV`;
+    } else {
+        // Remove search parameter when empty
+        url.searchParams.delete('s');
+        document.title = 'Live TV Streaming';
+    }
+    
+    // Update URL without reloading page
+    window.history.replaceState({}, '', url);
+}
 
         // Register Service Worker for PWA
 		if ('serviceWorker' in navigator) {
@@ -855,6 +876,45 @@ if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
     console.log('Speech recognition not supported');
 }
 
+// ============================================
+// URL SEARCH PARAMETER HANDLING
+// ============================================
+
+function getSearchFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('s') || params.get('search') || '';
+}
+
+function handleURLSearch() {
+    const searchTerm = getSearchFromURL();
+    if (searchTerm) {
+        console.log('Search from URL:', searchTerm);
+        searchInput.value = searchTerm;
+        searchQuery = searchTerm;
+        
+        // Update page title
+        document.title = `Search: ${searchTerm} - Live TV`;
+        
+        // Filter channels with the search term
+        filterChannels();
+        
+        // Scroll to results
+        setTimeout(() => {
+            const container = document.getElementById('channelsContainer');
+            if (container) {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
+    }
+}
+
+// Call after channels are loaded
+const originalLoadChannels = loadChannels;
+loadChannels = async function() {
+    await originalLoadChannels();
+    handleURLSearch();
+};
+
 // Initialize app
 loadChannels();
 
@@ -979,6 +1039,86 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// ============================================
+// SMART KEYBOARD HANDLING
+// ============================================
+
+document.addEventListener('keydown', (e) => {
+    const searchInput = document.getElementById('searchInput');
+    const activeElement = document.activeElement;
+    
+    // Get element type
+    const isInInput = activeElement.tagName === 'INPUT';
+    const isInSelect = activeElement.tagName === 'SELECT';
+    const isInTextarea = activeElement.tagName === 'TEXTAREA';
+    const isTypingAnywhere = isInInput || isInSelect || isInTextarea;
+    
+    // "/" key - Focus search (like YouTube, Reddit)
+    if (e.key === '/' && !isTypingAnywhere) {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+        return;
+    }
+    
+    // If in language selector, allow only arrow keys and Enter
+    if (isInSelect) {
+        // Allow: Arrow keys, Enter, Escape, Tab
+        const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', 'Tab'];
+        if (!allowedKeys.includes(e.key)) {
+            // Any other key - move to search
+            e.preventDefault();
+            searchInput.focus();
+            if (e.key.length === 1) {
+                searchInput.value = e.key;
+                searchQuery = e.key;
+                filterChannels();
+                updateSearchURL(e.key);
+            }
+        }
+        return;
+    }
+    
+    // If not typing anywhere and letter/number pressed - focus search
+    if (!isTypingAnywhere && e.key.length === 1 && /[a-zA-Z0-9\s]/.test(e.key)) {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.value = e.key;
+        searchQuery = e.key;
+        filterChannels();
+        updateSearchURL(e.key);
+        return;
+    }
+    
+    // Escape key handling
+    if (e.key === 'Escape') {
+        if (isInInput && activeElement === searchInput) {
+            // Clear search
+            searchInput.value = '';
+            searchQuery = '';
+            filterChannels();
+            updateSearchURL('');
+            searchInput.blur();
+        } else if (isInSelect) {
+            // Close dropdown
+            activeElement.blur();
+        }
+    }
+});
+
+// Click on language selector - prevent keyboard hijacking
+document.getElementById('languageSelect').addEventListener('focus', (e) => {
+    console.log('Language selector focused');
+});
+
+// When language selector changes, move focus back to search
+document.getElementById('languageSelect').addEventListener('change', (e) => {
+    // After selection, blur the select so typing goes to search
+    setTimeout(() => {
+        e.target.blur();
+    }, 100);
+});
 
     </script>
 </body>

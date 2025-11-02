@@ -552,6 +552,8 @@
         let channelsData = [];
         let isPlaying = false;
         let isMuted = false;
+		let retryInterval = null; // For auto-retry timer
+		let currentStreamData = null; // Store current stream data
 
         // Get URL parameters
         function getUrlParams() {
@@ -756,39 +758,135 @@ function setupPlayerEvents() {
             });
         }
 
-        // Load and play channel
-        async function loadChannel(channelId) {
-            if (!channelId) {
-                showError('No channel selected');
-                return;
-            }
+// Load and play channel
+async function loadChannel(channelId) {
+    if (!channelId) {
+        showError('No channel selected');
+        return;
+    }
 
-            showLoading();
+    showLoading();
 
-            try {
-                // Load channel data
-                await loadChannelData();
-                currentChannel = findChannel(channelId);
+    try {
+        // Load channel data from JSON
+        await loadChannelData();
+        currentChannel = findChannel(channelId);
 
-                if (!currentChannel) {
-                    showError('Channel not found');
-                    return;
-                }
-
-                // Update channel info
-                updateChannelInfo(currentChannel);
-
-                // Fetch stream details
-                const streamData = await fetchStreamDetails(currentChannel.id);
-
-                // Initialize player
-                initializePlayer(streamData);
-
-            } catch (error) {
-                console.error('Error loading channel:', error);
-                showError(error.message || 'Failed to load channel');
-            }
+        if (!currentChannel) {
+            showError('Channel not found');
+            return;
         }
+
+        // Update channel info
+        updateChannelInfo(currentChannel);
+
+        let streamData;
+
+        // ✅ NEW: Check if direct stream URL exists in JSON
+        if (currentChannel.direct_stream) {
+            console.log('Using direct stream from JSON:', currentChannel.direct_stream);
+            
+            // Determine if it's DRM based on title (or you can add a "drm" field)
+            const isDRM = currentChannel.title.includes("*");
+            
+            streamData = {
+                isDRM: isDRM,
+                streamUrl: currentChannel.direct_stream,
+                licenseUrl: isDRM ? currentChannel.license_url : null, // Optional DRM license
+                title: currentChannel.title
+            };
+			
+			// Store stream data globally for retry mechanism
+			currentStreamData = streamData;
+
+			// NEW: Setup auto-retry if "retry": "yes" in channel data
+			if (currentChannel.retry === "yes") {
+				setupAutoRetry();
+			}
+        } else {
+            // No direct stream - fetch from API
+            console.log('No direct stream found, fetching from API for id:', currentChannel.id);
+            streamData = await fetchStreamDetails(currentChannel.id);
+			
+			// Store stream data globally for retry mechanism
+			currentStreamData = streamData;
+
+			// NEW: Setup auto-retry if "retry": "yes" in channel data
+			if (currentChannel.retry === "yes") {
+				setupAutoRetry();
+			}
+        }
+		
+		
+
+        // Initialize player with stream data
+        initializePlayer(streamData);
+
+    } catch (error) {
+        console.error('Error loading channel:', error);
+        showError(error.message || 'Failed to load channel');
+    }
+}
+
+// Setup automatic stream retry every 2 minutes
+function setupAutoRetry() {
+    // Clear any existing retry interval
+    if (retryInterval) {
+        clearInterval(retryInterval);
+    }
+
+    console.log('Auto-retry enabled: Stream will refresh every 2 minutes');
+
+    // Set interval to refresh stream every 2 minutes (120000 ms)
+    retryInterval = setInterval(async () => {
+        if (!currentChannel || !player) return;
+
+        console.log('Auto-retry triggered: Refreshing stream...');
+
+        try {
+            let newStreamData;
+
+            // Check if using direct stream or API
+            if (currentChannel.direct_stream) {
+                const isDRM = currentChannel.title.includes("*");
+                newStreamData = {
+                    isDRM: isDRM,
+                    streamUrl: currentChannel.direct_stream,
+                    licenseUrl: isDRM ? currentChannel.license_url : null,
+                    title: currentChannel.title
+                };
+            } else {
+                // Fetch fresh stream URL from API
+                newStreamData = await fetchStreamDetails(currentChannel.id);
+            }
+
+            // Update stored stream data
+            currentStreamData = newStreamData;
+
+            // Get current player state
+            const currentTime = player.getPosition();
+            const wasMuted = player.getMute();
+            const currentVolume = player.getVolume();
+
+            // Reload player with new stream
+            player.load({
+                file: newStreamData.streamUrl,
+                type: newStreamData.isDRM ? "dash" : "hls"
+            });
+
+            // Restore player state
+            player.setMute(wasMuted);
+            player.setVolume(currentVolume);
+            player.play();
+
+            console.log('Stream refreshed successfully');
+
+        } catch (error) {
+            console.error('Auto-retry failed:', error);
+            // Continue with existing stream on error
+        }
+    }, 120000); // 2 minutes = 120000 milliseconds
+}
 
         // Update channel information
         function updateChannelInfo(channel) {
@@ -839,10 +937,16 @@ function hideBuffering() {
         }
 
         // Control Functions
-        function goBack() {
-            if (player) player.remove();
-            window.history.back();
-        }
+function goBack() {
+    // Clear retry interval if exists
+    if (retryInterval) {
+        clearInterval(retryInterval);
+        retryInterval = null;
+    }
+    
+    if (player) player.remove();
+    window.history.back();
+}
 
         function togglePlayPause() {
             if (!player) return;
