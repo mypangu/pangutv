@@ -858,6 +858,128 @@ if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
 // Initialize app
 loadChannels();
 
+// ============================================
+// TV REMOTE / KEYBOARD NAVIGATION SUPPORT
+// ============================================
+
+let focusableElements = [];
+let currentFocusIndex = -1;
+
+function updateFocusableElements() {
+    // Get all focusable elements (buttons and channel cards)
+    focusableElements = Array.from(document.querySelectorAll(
+        'button, select, .channel-card, input'
+    )).filter(el => {
+        // Only include visible elements
+        return el.offsetParent !== null;
+    });
+}
+
+function focusElement(index) {
+    if (index < 0 || index >= focusableElements.length) return;
+    
+    const element = focusableElements[index];
+    element.focus();
+    
+    // Scroll into view if needed
+    element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest'
+    });
+    
+    currentFocusIndex = index;
+}
+
+function handleKeyboardNavigation(e) {
+    // Update focusable elements list
+    updateFocusableElements();
+    
+    if (focusableElements.length === 0) return;
+    
+    // If nothing is focused, focus the first element
+    if (currentFocusIndex === -1) {
+        currentFocusIndex = 0;
+        focusElement(0);
+        return;
+    }
+    
+    const currentElement = focusableElements[currentFocusIndex];
+    const isChannelCard = currentElement.classList.contains('channel-card');
+    
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (isChannelCard) {
+                // Move down by one row (approximate)
+                const cardsPerRow = Math.floor(window.innerWidth / 170);
+                const newIndex = Math.min(currentFocusIndex + cardsPerRow, focusableElements.length - 1);
+                focusElement(newIndex);
+            } else {
+                // Move to next element
+                focusElement(Math.min(currentFocusIndex + 1, focusableElements.length - 1));
+            }
+            break;
+            
+        case 'ArrowUp':
+            e.preventDefault();
+            if (isChannelCard) {
+                // Move up by one row
+                const cardsPerRow = Math.floor(window.innerWidth / 170);
+                const newIndex = Math.max(currentFocusIndex - cardsPerRow, 0);
+                focusElement(newIndex);
+            } else {
+                // Move to previous element
+                focusElement(Math.max(currentFocusIndex - 1, 0));
+            }
+            break;
+            
+        case 'ArrowRight':
+            e.preventDefault();
+            focusElement(Math.min(currentFocusIndex + 1, focusableElements.length - 1));
+            break;
+            
+        case 'ArrowLeft':
+            e.preventDefault();
+            focusElement(Math.max(currentFocusIndex - 1, 0));
+            break;
+            
+        case 'Enter':
+            e.preventDefault();
+            currentElement.click();
+            break;
+    }
+}
+
+// Add keyboard event listener
+document.addEventListener('keydown', handleKeyboardNavigation);
+
+// Update focusable elements when channels are rendered
+const originalRenderChannels = renderChannels;
+renderChannels = function() {
+    originalRenderChannels();
+    setTimeout(updateFocusableElements, 100);
+};
+
+// Add focus styling
+const style = document.createElement('style');
+style.textContent = `
+    button:focus,
+    select:focus,
+    input:focus,
+    .channel-card:focus {
+        outline: 3px solid #ff0075 !important;
+        outline-offset: 3px !important;
+        box-shadow: 0 0 0 6px rgba(255, 0, 117, 0.3) !important;
+    }
+    
+    .channel-card:focus {
+        transform: scale(1.05) !important;
+        z-index: 10;
+    }
+`;
+document.head.appendChild(style);
+
     </script>
 </body>
 </html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>Custom HLS Player (Stretch Mode)</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    #player-wrapper {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    #player {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    /* Force stretch/fill mode */
+    video, #player video, .clappr-video {
+      object-fit: fill !important;
+      width: 100% !important;
+      height: 100% !important;
+      background-color: #000 !important;
+    }
+
+    .error-message {
+      color: #ff4d4d;
+      font-size: 18px;
+      font-weight: bold;
+      background: rgba(0,0,0,0.6);
+      padding: 12px 20px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div id="player-wrapper">
+    <div id="player"></div>
+  </div>
+
+  <!-- Clappr Core -->
+  <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+  <!-- Level Selector Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/level-selector@0.2.0/dist/level-selector.min.js"></script>
+  <!-- Audio Track Selector Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/@c3voc/clappr-audio-track-selector@0.2.4/dist/audio-track-selector.min.js"></script>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get('source');
+
+    if (!source) {
+      document.getElementById('player').innerHTML = `
+        <div><p class='error-message'>
+          No source provided.<br>Use ?source=https://example.com/live.m3u8
+        </p></div>`;
+    } else {
+      const player = new Clappr.Player({
+        source: source,
+        parentId: '#player',
+        width: '100%',
+        height: '100%',
+        autoPlay: true,
+        mute: false,
+        loop: false,
+        plugins: [LevelSelector, AudioTrackSelector],
+        levelSelectorConfig: { title: 'Quality' },
+        audioTrackSelectorConfig: {
+          title: 'Audio',
+          labelCallback: track => track.lang || track.name || 'Unknown'
+        },
+        mediacontrol: {
+          seekbar: "#e92065",
+          buttons: "#e92065"
+        },
+        playback: {
+          playInline: true,
+          crossOrigin: "anonymous",
+          hlsjsConfig: {
+            capLevelToPlayerSize: true,
+            maxBufferLength: 30
+          }
+        }
+      });
+
+      // Ensure fill mode after player loads
+      player.on(Clappr.Events.PLAYER_READY, function() {
+        const vid = document.querySelector('video');
+        if (vid) {
+          vid.style.objectFit = 'fill';
+          vid.style.width = '100%';
+          vid.style.height = '100%';
+        }
+      });
+
+      player.on(Clappr.Events.PLAYER_ERROR, function() {
+        document.getElementById('player').innerHTML = `
+          <div><p class='error-message'>
+            Stream down. Please try again later.
+          </p></div>`;
+      });
+    }
+  </script>
+</body>
+</html>
