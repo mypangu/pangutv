@@ -623,10 +623,43 @@ function initializeNativeHLS(streamData) {
     wrapper.innerHTML = '';
     wrapper.appendChild(videoElement);
     
+    // ✅ ADD THESE EVENT LISTENERS for button state sync
+    videoElement.addEventListener('play', function() {
+        console.log('Native video playing');
+        isPlaying = true;
+        document.getElementById('playIcon').style.display = 'none';
+        document.getElementById('pauseIcon').style.display = 'block';
+        hideLoading();
+        hideBuffering();
+    });
+    
+    videoElement.addEventListener('pause', function() {
+        console.log('Native video paused');
+        isPlaying = false;
+        document.getElementById('playIcon').style.display = 'block';
+        document.getElementById('pauseIcon').style.display = 'none';
+    });
+    
+    videoElement.addEventListener('waiting', function() {
+        console.log('Native video buffering');
+        showBuffering();
+    });
+    
+    videoElement.addEventListener('playing', function() {
+        console.log('Native video resumed playing');
+        hideBuffering();
+    });
+    
+    videoElement.addEventListener('volumechange', function() {
+        isMuted = videoElement.muted;
+        document.getElementById('volumeOnIcon').style.display = isMuted ? 'none' : 'block';
+        document.getElementById('volumeOffIcon').style.display = isMuted ? 'block' : 'none';
+    });
+    
+    // Rest of your HLS.js code...
     if (Hls.isSupported()) {
         const hls = new Hls({
             xhrSetup: function(xhr, url) {
-                // Add custom headers
                 xhr.setRequestHeader('Referer', window.location.href);
             }
         });
@@ -646,48 +679,59 @@ function initializeNativeHLS(streamData) {
             }
         });
         
-        // Store for cleanup
         window.hlsPlayer = hls;
         
     } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-        // Native HLS support (iOS)
         videoElement.src = streamData.streamUrl;
         videoElement.addEventListener('loadedmetadata', function() {
             hideLoading();
             videoElement.play();
         });
     }
+    
+    // ✅ Hide quality button for native HLS (quality switching not supported)
+    const qualityBtn = document.getElementById('qualityBtn');
+    if (qualityBtn) {
+        qualityBtn.style.opacity = '0.3';
+        qualityBtn.style.pointerEvents = 'none';
+        qualityBtn.title = 'Quality selection not available';
+    }
 }		
 
-        // Initialize JW Player
-        function initializePlayer(streamData) {
-            const config = {
-                file: streamData.streamUrl,
-                type: streamData.isDRM ? "dash" : "hls",
-                autostart: true,
-                controls: false, // Use custom controls
-                width: "100%",
-                height: "100%",
-                stretching: "exactfit",
-                playbackRateControls: false,
-                preload: "auto"
-            };
+// Initialize JW Player
+function initializePlayer(streamData) {
+    const config = {
+        file: streamData.streamUrl,
+        type: streamData.isDRM ? "dash" : "hls",
+        autostart: true,
+        controls: false,
+        width: "100%",
+        height: "100%",
+        stretching: "exactfit",
+        playbackRateControls: false,
+        preload: "auto"
+    };
 
-            // Add DRM config if needed
-            if (streamData.isDRM && streamData.licenseUrl) {
-                config.drm = {
-                    widevine: { url: streamData.licenseUrl }
-                };
-            }
+    if (streamData.isDRM && streamData.licenseUrl) {
+        config.drm = {
+            widevine: { url: streamData.licenseUrl }
+        };
+    }
 
-            player = jwplayer("jwplayer-container").setup(config);
-			
-			// Safety: Hide loading when player object is created
-			setTimeout(() => hideLoading(), 2000)
-
-            // Setup event listeners
-            setupPlayerEvents();
-        }
+    player = jwplayer("jwplayer-container").setup(config);
+    
+    setTimeout(() => hideLoading(), 2000);
+    
+    setupPlayerEvents();
+    
+    // ✅ Re-enable quality button for JW Player
+    const qualityBtn = document.getElementById('qualityBtn');
+    if (qualityBtn) {
+        qualityBtn.style.opacity = '1';
+        qualityBtn.style.pointerEvents = 'auto';
+        qualityBtn.title = 'Quality';
+    }
+}
 
 // Setup player events
 function setupPlayerEvents() {
@@ -864,12 +908,15 @@ async function loadChannel(channelId) {
 		
 		
 
-// Use native HLS for better mobile compatibility
+/*
 if (streamData.isDRM) {
     initializePlayer(streamData); // Use JW Player for DRM
 } else {
     initializeNativeHLS(streamData); // Use HLS.js for non-DRM
 }
+*/
+
+initializePlayer(streamData); // Test: Always use JW Player
 
     } catch (error) {
         console.error('Error loading channel:', error);
@@ -997,25 +1044,49 @@ function goBack() {
     window.history.back();
 }
 
-        function togglePlayPause() {
-            if (!player) return;
-            const state = player.getState();
-            if (state === 'playing') {
-                player.pause();
-            } else {
-                player.play();
-            }
+function togglePlayPause() {
+    // Check if using native video element (HLS.js)
+    const nativeVideo = document.getElementById('native-video');
+    if (nativeVideo) {
+        if (nativeVideo.paused) {
+            nativeVideo.play();
+        } else {
+            nativeVideo.pause();
         }
+        return;
+    }
+    
+    // JW Player
+    if (!player) return;
+    const state = player.getState();
+    if (state === 'playing') {
+        player.pause();
+    } else {
+        player.play();
+    }
+}
 
-        function toggleMute() {
-            if (!player) return;
-            const muted = player.getMute();
-            player.setMute(!muted);
-            isMuted = !muted;
-            
-            document.getElementById('volumeOnIcon').style.display = isMuted ? 'none' : 'block';
-            document.getElementById('volumeOffIcon').style.display = isMuted ? 'block' : 'none';
-        }
+function toggleMute() {
+    // Check if using native video element (HLS.js)
+    const nativeVideo = document.getElementById('native-video');
+    if (nativeVideo) {
+        nativeVideo.muted = !nativeVideo.muted;
+        isMuted = nativeVideo.muted;
+        
+        document.getElementById('volumeOnIcon').style.display = isMuted ? 'none' : 'block';
+        document.getElementById('volumeOffIcon').style.display = isMuted ? 'block' : 'none';
+        return;
+    }
+    
+    // JW Player
+    if (!player) return;
+    const muted = player.getMute();
+    player.setMute(!muted);
+    isMuted = !muted;
+    
+    document.getElementById('volumeOnIcon').style.display = isMuted ? 'none' : 'block';
+    document.getElementById('volumeOffIcon').style.display = isMuted ? 'block' : 'none';
+}
 
 function toggleFullscreen() {
     const container = document.getElementById('playerContainer');
@@ -1024,6 +1095,10 @@ function toggleFullscreen() {
         // Entering fullscreen
         container.requestFullscreen().then(() => {
             console.log('Entered fullscreen');
+            
+            // Update fullscreen icons
+            document.getElementById('enterFsIcon').style.display = 'none';
+            document.getElementById('exitFsIcon').style.display = 'block';
             
             // On mobile, try to lock orientation to landscape
             if (screen.orientation && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
@@ -1040,6 +1115,10 @@ function toggleFullscreen() {
         // Exiting fullscreen
         document.exitFullscreen().then(() => {
             console.log('Exited fullscreen');
+            
+            // Update fullscreen icons
+            document.getElementById('enterFsIcon').style.display = 'block';
+            document.getElementById('exitFsIcon').style.display = 'none';
             
             // Unlock orientation when exiting fullscreen
             if (screen.orientation && screen.orientation.unlock) {
