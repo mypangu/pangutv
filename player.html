@@ -556,6 +556,7 @@
         let isMuted = false;
 		let retryInterval = null; // For auto-retry timer
 		let currentStreamData = null; // Store current stream data
+		let isDoubleTapping = false;
 
         // Get URL parameters
         function getUrlParams() {
@@ -700,7 +701,7 @@ function setupPlayerEvents() {
         player.setMute(false);
         buildQualityMenu();
         
-        // Double-tap for fullscreen (works on mobile)
+// Double-tap for fullscreen (works on mobile)
 const mediaElement = document.querySelector('.jw-media');
 if (mediaElement) {
     let lastTap = 0;
@@ -712,7 +713,14 @@ if (mediaElement) {
         if (tapLength < 300 && tapLength > 0) {
             // Double tap detected
             e.preventDefault();
+            e.stopPropagation();
+            isDoubleTapping = true;
             toggleFullscreen();
+            
+            // Reset flag after a delay
+            setTimeout(() => {
+                isDoubleTapping = false;
+            }, 500);
         }
         lastTap = currentTime;
     });
@@ -720,6 +728,7 @@ if (mediaElement) {
     // Keep dblclick for desktop
     mediaElement.addEventListener('dblclick', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         toggleFullscreen();
     });
 }
@@ -1126,21 +1135,26 @@ function toggleFullscreen() {
         document.addEventListener('touchstart', resetHideControlsTimer);
         document.addEventListener('touchmove', resetHideControlsTimer);
 
-        // Click to toggle controls
-        document.getElementById('playerContainer').addEventListener('click', (e) => {
-            // Don't toggle if clicking on controls
-            if (e.target.closest('.controls-overlay') || e.target.closest('.top-bar')) {
-                return;
-            }
-            
-            const controlsHidden = document.getElementById('controlsOverlay').classList.contains('hidden');
-            if (controlsHidden) {
-                resetHideControlsTimer();
-            } else {
-                hideControls();
-                clearTimeout(hideControlsTimeout);
-            }
-        });
+// Click to toggle controls
+document.getElementById('playerContainer').addEventListener('click', (e) => {
+    // Don't toggle if double-tapping
+    if (isDoubleTapping) {
+        return;
+    }
+    
+    // Don't toggle if clicking on controls
+    if (e.target.closest('.controls-overlay') || e.target.closest('.top-bar')) {
+        return;
+    }
+    
+    const controlsHidden = document.getElementById('controlsOverlay').classList.contains('hidden');
+    if (controlsHidden) {
+        resetHideControlsTimer();
+    } else {
+        hideControls();
+        clearTimeout(hideControlsTimeout);
+    }
+});
 
         // Fullscreen change
         document.addEventListener('fullscreenchange', () => {
