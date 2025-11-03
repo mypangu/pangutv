@@ -544,6 +544,26 @@
             </div>
         </div>
     </div>
+	
+	<script>
+	// Check if service worker is active
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        if (registrations.length === 0) {
+            console.log('✅ NO SERVICE WORKER ACTIVE');
+            alert('✅ Service Worker Disabled');
+        } else {
+            console.log('❌ SERVICE WORKER STILL ACTIVE:', registrations);
+            alert('❌ Service Worker Still Active! Count: ' + registrations.length);
+            
+            // Force unregister again
+            registrations.forEach(function(registration) {
+                registration.unregister();
+            });
+        }
+    });
+}
+</script>
 
     <script>
         let player;

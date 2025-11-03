@@ -741,43 +741,21 @@ function updateSearchURL(searchTerm) {
     window.history.replaceState({}, '', url);
 }
 
-// Register Service Worker for PWA
+// DISABLE Service Worker - Remove all instances
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        // First, unregister ALL old service workers
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for(let registration of registrations) {
-                registration.unregister();
-                console.log('Unregistered old service worker');
-            }
-            
-            // Wait a moment, then register the new one
-            setTimeout(function() {
-                navigator.serviceWorker.register('/sw.js')
-                .then(function(registration) {
-                    console.log('ServiceWorker registered successfully:', registration.scope);
-                    
-                    // Force immediate update
-                    registration.update();
-                    
-                    // Listen for updates
-                    registration.addEventListener('updatefound', function() {
-                        const newWorker = registration.installing;
-                        console.log('New service worker found, installing...');
-                        
-                        newWorker.addEventListener('statechange', function() {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('New service worker installed, reloading page...');
-                                // Force reload to activate new service worker
-                                window.location.reload();
-                            }
-                        });
-                    });
-                })
-                .catch(function(error) {
-                    console.log('ServiceWorker registration failed:', error);
-                });
-            }, 500);
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+            registration.unregister().then(function(success) {
+                console.log('Service Worker unregistered:', success);
+            });
+        }
+    });
+    
+    // Clear all caches
+    caches.keys().then(function(cacheNames) {
+        cacheNames.forEach(function(cacheName) {
+            caches.delete(cacheName);
+            console.log('Cache deleted:', cacheName);
         });
     });
 }
