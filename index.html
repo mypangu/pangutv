@@ -741,22 +741,54 @@ function updateSearchURL(searchTerm) {
     window.history.replaceState({}, '', url);
 }
 
-// DISABLE Service Worker - Remove all instances
+// AGGRESSIVELY REMOVE SERVICE WORKER
 if ('serviceWorker' in navigator) {
+    // Unregister immediately (before page load)
     navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(let registration of registrations) {
-            registration.unregister().then(function(success) {
-                console.log('Service Worker unregistered:', success);
+        console.log('Found', registrations.length, 'service workers');
+        
+        let unregisterPromises = registrations.map(function(registration) {
+            console.log('Unregistering:', registration.scope);
+            return registration.unregister();
+        });
+        
+        Promise.all(unregisterPromises).then(function() {
+            console.log('✅ All service workers unregistered');
+            
+            // Clear all caches
+            return caches.keys();
+        }).then(function(cacheNames) {
+            console.log('Found', cacheNames.length, 'caches');
+            
+            let deletePromises = cacheNames.map(function(cacheName) {
+                console.log('Deleting cache:', cacheName);
+                return caches.delete(cacheName);
             });
+            
+            return Promise.all(deletePromises);
+        }).then(function() {
+            console.log('✅ All caches cleared');
+            console.log('✅ SERVICE WORKER COMPLETELY REMOVED');
+            
+            // Force reload to ensure clean state
+            if (!sessionStorage.getItem('sw_removed')) {
+                sessionStorage.setItem('sw_removed', 'true');
+                window.location.reload(true);
+            }
+        });
+    });
+    
+    // Also try to unregister using direct scope
+    navigator.serviceWorker.getRegistration('/').then(function(registration) {
+        if (registration) {
+            registration.unregister();
         }
     });
     
-    // Clear all caches
-    caches.keys().then(function(cacheNames) {
-        cacheNames.forEach(function(cacheName) {
-            caches.delete(cacheName);
-            console.log('Cache deleted:', cacheName);
-        });
+    navigator.serviceWorker.getRegistration('/sw.js').then(function(registration) {
+        if (registration) {
+            registration.unregister();
+        }
     });
 }
 

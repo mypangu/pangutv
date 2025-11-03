@@ -544,26 +544,6 @@
             </div>
         </div>
     </div>
-	
-	<script>
-	// Check if service worker is active
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        if (registrations.length === 0) {
-            console.log('✅ NO SERVICE WORKER ACTIVE');
-            alert('✅ Service Worker Disabled');
-        } else {
-            console.log('❌ SERVICE WORKER STILL ACTIVE:', registrations);
-            alert('❌ Service Worker Still Active! Count: ' + registrations.length);
-            
-            // Force unregister again
-            registrations.forEach(function(registration) {
-                registration.unregister();
-            });
-        }
-    });
-}
-</script>
 
     <script>
         let player;
@@ -1145,20 +1125,14 @@ function toggleFullscreen() {
             hideControls();
         }, 3000);
 		
-		// Register Service Worker for PWA
-		if ('serviceWorker' in navigator) {
-			window.addEventListener('load', function() {
-				navigator.serviceWorker.register('/sw.js')
-				.then(function(registration) {
-					console.log('ServiceWorker registered successfully:', registration.scope);
-					// Force update check
-					registration.update();
-				})
-				.catch(function(error) {
-					console.log('ServiceWorker registration failed:', error);
-				});
-			});
-		}
+// FORCE REMOVE SERVICE WORKER ON PLAYER PAGE
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        registrations.forEach(function(registration) {
+            registration.unregister();
+        });
+    });
+}
     </script>
 </body>
 </html>
