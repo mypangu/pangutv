@@ -1,7 +1,7 @@
-const CACHE_VERSION = "0311250300";  
+const CACHE_VERSION = "0311250600";  
 const CACHE_NAME = `live-tv-cache-${CACHE_VERSION}`;
 
-// Only cache static assets
+// Static assets to cache for offline support
 const urlsToCache = [
   '/',
   '/index.html',
@@ -11,7 +11,7 @@ const urlsToCache = [
 
 // Install event - cache static files
 self.addEventListener('install', function(event) {
-  console.log('[ServiceWorker] Installing...');
+  console.log('[ServiceWorker] Installing for PWA features...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function(cache) {
@@ -22,7 +22,6 @@ self.addEventListener('install', function(event) {
         console.error('[ServiceWorker] Cache failed:', error);
       })
   );
-  // Force the waiting service worker to become the active service worker
   self.skipWaiting();
 });
 
@@ -41,48 +40,40 @@ self.addEventListener('activate', function(event) {
       );
     })
   );
-  // Take control of all pages immediately
   return self.clients.claim();
 });
 
-// Fetch event - smart caching strategy
+// Fetch event - Smart caching (NEVER touch streams)
 self.addEventListener('fetch', function(event) {
   const url = new URL(event.request.url);
   const requestUrl = event.request.url;
   
-  // === NEVER CACHE THESE (Video streams, APIs, external resources) ===
-  const noCachePatterns = [
-    '.m3u8',           // HLS playlists
-    '.mpd',            // DASH manifests
-    '.ts',             // Video segments
-    '.m4s',            // DASH segments
-    'live.php',        // Your streaming endpoint
-    'dlive.php',       // Your DRM streaming endpoint
-    'rest_api.php',    // Your API endpoint
-    'workers.dev',     // Cloudflare workers
-    'playyonogames.in',// Your streaming domain
-    'jwpcdn.com',      // JW Player CDN
-    'cdnjs.cloudflare.com' // External scripts
+  // === NEVER CACHE OR INTERCEPT THESE (Let Cloudflare Worker handle streams) ===
+  const neverIntercept = [
+    '.m3u8',              // HLS playlists
+    '.mpd',               // DASH manifests
+    '.ts',                // Video segments
+    '.m4s',               // DASH segments
+    'live.php',           // Streaming endpoints
+    'dlive.php',          // DRM streaming
+    'rest_api.php',       // API calls
+    'workers.dev',        // Cloudflare Workers (our proxy!)
+    'servertvhub.site',   // Stream proxy
+    'jiotvmblive.cdn.jio.com', // JIO CDN
+    'jwpcdn.com',         // JW Player CDN
+    'cdnjs.cloudflare.com', // External scripts
+    'cdn.jsdelivr.net'    // External libraries
   ];
   
-  // Check if request should bypass cache
-  const shouldBypassCache = noCachePatterns.some(pattern => 
-    requestUrl.includes(pattern)
-  );
+  // Check if request should bypass service worker entirely
+  const shouldBypass = neverIntercept.some(pattern => requestUrl.includes(pattern));
   
-  // Also bypass cache for POST requests
-  if (event.request.method !== 'GET' || shouldBypassCache) {
-    console.log('[ServiceWorker] Bypassing cache for:', requestUrl);
-    return event.respondWith(
-      fetch(event.request)
-        .catch(function(error) {
-          console.error('[ServiceWorker] Fetch failed:', error);
-          throw error;
-        })
-    );
+  if (shouldBypass || event.request.method !== 'GET') {
+    // Let these pass through WITHOUT any service worker interference
+    return; // No event.respondWith - browser handles it directly
   }
   
-  // === CACHE STRATEGY FOR STATIC ASSETS ===
+  // === CACHE STRATEGY FOR STATIC ASSETS ONLY ===
   event.respondWith(
     caches.match(event.request)
       .then(function(cachedResponse) {
@@ -93,11 +84,10 @@ self.addEventListener('fetch', function(event) {
           // Fetch in background to update cache (stale-while-revalidate)
           fetch(event.request)
             .then(function(networkResponse) {
-              if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-                caches.open(CACHE_NAME)
-                  .then(function(cache) {
-                    cache.put(event.request, networkResponse.clone());
-                  });
+              if (networkResponse && networkResponse.status === 200) {
+                caches.open(CACHE_NAME).then(function(cache) {
+                  cache.put(event.request, networkResponse.clone());
+                });
               }
             })
             .catch(function() {
@@ -111,24 +101,20 @@ self.addEventListener('fetch', function(event) {
         console.log('[ServiceWorker] Fetching from network:', requestUrl);
         return fetch(event.request)
           .then(function(networkResponse) {
-            // Check if valid response
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-              return networkResponse;
-            }
-            
-            // Cache the new response
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
+            // Cache successful responses
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+              const responseToCache = networkResponse.clone();
+              caches.open(CACHE_NAME).then(function(cache) {
                 cache.put(event.request, responseToCache);
               });
-            
+            }
             return networkResponse;
-          })
-          .catch(function(error) {
-            console.error('[ServiceWorker] Network fetch failed:', error);
-            throw error;
           });
+      })
+      .catch(function(error) {
+        console.error('[ServiceWorker] Fetch failed:', error);
+        // Could return offline page here if you have one
+        throw error;
       })
   );
 });

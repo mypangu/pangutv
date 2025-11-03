@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#000000">
     <title>Live TV Player</title>
+	
+	<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     
     <!-- JW Player -->
     <script src="https://ssl.p.jwpcdn.com/player/v/8.38.7/jwplayer.js"></script>
@@ -605,6 +607,57 @@
                 throw error;
             }
         }
+		
+// Use native HLS for mobile compatibility
+function initializeNativeHLS(streamData) {
+    const videoElement = document.createElement('video');
+    videoElement.id = 'native-video';
+    videoElement.style.width = '100%';
+    videoElement.style.height = '100%';
+    videoElement.style.objectFit = 'fill';
+    videoElement.controls = false;
+    videoElement.autoplay = true;
+    videoElement.playsInline = true;
+    
+    const wrapper = document.getElementById('jwplayer-wrapper');
+    wrapper.innerHTML = '';
+    wrapper.appendChild(videoElement);
+    
+    if (Hls.isSupported()) {
+        const hls = new Hls({
+            xhrSetup: function(xhr, url) {
+                // Add custom headers
+                xhr.setRequestHeader('Referer', window.location.href);
+            }
+        });
+        
+        hls.loadSource(streamData.streamUrl);
+        hls.attachMedia(videoElement);
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            hideLoading();
+            videoElement.play();
+        });
+        
+        hls.on(Hls.Events.ERROR, function(event, data) {
+            console.error('HLS error:', data);
+            if (data.fatal) {
+                showError('Stream error: ' + data.type);
+            }
+        });
+        
+        // Store for cleanup
+        window.hlsPlayer = hls;
+        
+    } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native HLS support (iOS)
+        videoElement.src = streamData.streamUrl;
+        videoElement.addEventListener('loadedmetadata', function() {
+            hideLoading();
+            videoElement.play();
+        });
+    }
+}		
 
         // Initialize JW Player
         function initializePlayer(streamData) {
@@ -819,8 +872,12 @@ async function loadChannel(channelId) {
 		
 		
 
-        // Initialize player with stream data
-        initializePlayer(streamData);
+// Use native HLS for better mobile compatibility
+if (streamData.isDRM) {
+    initializePlayer(streamData); // Use JW Player for DRM
+} else {
+    initializeNativeHLS(streamData); // Use HLS.js for non-DRM
+}
 
     } catch (error) {
         console.error('Error loading channel:', error);
@@ -1125,11 +1182,31 @@ function toggleFullscreen() {
             hideControls();
         }, 3000);
 		
-// FORCE REMOVE SERVICE WORKER ON PLAYER PAGE
+// Register Service Worker for PWA features
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        registrations.forEach(function(registration) {
-            registration.unregister();
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+        .then(function(registration) {
+            console.log('✅ ServiceWorker registered for PWA:', registration.scope);
+            
+            // Check for updates
+            registration.update();
+            
+            // Handle updates
+            registration.addEventListener('updatefound', function() {
+                const newWorker = registration.installing;
+                console.log('New service worker found');
+                
+                newWorker.addEventListener('statechange', function() {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log('New service worker installed, will activate on next page load');
+                        // Optionally show update notification to user
+                    }
+                });
+            });
+        })
+        .catch(function(error) {
+            console.log('ServiceWorker registration failed:', error);
         });
     });
 }

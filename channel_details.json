@@ -1700,9 +1700,7 @@
         "title": "J Movies",
         "channel": "Movies",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/J_Movies.png",
-		"direct_stream": "https://servertvhub.site/jio/app/ts_live_417.m3u8",
-		"retry": "yes"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/J_Movies.png"
     },
     {
         "platform": "iframe",
@@ -1710,9 +1708,7 @@
         "title": "Jaya Max",
         "channel": "Movies",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Jaya_Max.png",
-		"direct_stream": "https://servertvhub.site/jio/app/ts_live_420.m3u8",
-		"retry": "yes"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Jaya_Max.png"
     },
     {
         "platform": "iframe",
@@ -1752,9 +1748,7 @@
         "title": "Jaya TV HD",
         "channel": "Entertainment",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Jaya_TV_HD.png",
-		"direct_stream": "https://servertvhub.site/jio/app/ts_live_419.m3u8",
-		"retry": "yes"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Jaya_TV_HD.png"
     },
     {
         "platform": "iframe",
@@ -1991,9 +1985,7 @@
         "title": "KTV HD",
         "channel": "Movies",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/KTV_HD.png",
-		"direct_stream": "https://servertvhub.site/jio/app/ts_live_894.m3u8",
-		"retry": "yes"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/KTV_HD.png"
     },
     {
         "platform": "iframe",
@@ -7497,9 +7489,7 @@
         "title": "Sun Music HD",
         "channel": "Music",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_Music_HD.png",
-		"direct_stream": "https://servertvhub.site/jio/app/ts_live_895.m3u8",
-		"rretry": "yes"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_Music_HD.png"
     },
     {
         "platform": "iframe",
@@ -8155,9 +8145,7 @@
         "title": "Sun TV HD",
         "channel": "Entertainment",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_TV_HD.png",
-		"direct_stream": "https://servertvhub.site/jio/app/ts_live_896.m3u8",
-		"retry": "yes"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_TV_HD.png"
     },
     {
         "platform": "iframe",
