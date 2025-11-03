@@ -1,4 +1,4 @@
-const CACHE_VERSION = "0311251600";  
+const CACHE_VERSION = "0311251700";  
 const CACHE_NAME = `live-tv-cache-${CACHE_VERSION}`;
 
 // Static assets to cache for offline support

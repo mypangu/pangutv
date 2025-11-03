@@ -8147,8 +8147,7 @@
         "title": "Sun TV HD",
         "channel": "Entertainment",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_TV_HD.png",
-		"direct_stream": "https://cors-proxy.cooks.fyi/https://livestream2.sunnxt.com/19ee29194c4d4fc286c3e697362e60cd/SunTVHDB_IN_index.mpd?&keyId=3891557f1cb14dedb7545bf52499d748&key=fb662f742e5f5e0c61a7c1c66d2b019a"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_TV_HD.png"
     },
     {
         "platform": "iframe",
