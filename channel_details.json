@@ -7490,8 +7490,7 @@
         "title": "Sun Music HD",
         "channel": "Music",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_Music_HD.png",
-		"direct_stream": "https://linearjitp-playback.astro.com.my/dash-wv/linear/5011/default_ott.mpd?&keyId=beaca9461f7ca0d58ba529fed2e7b610&key=da0a70148e126eb40cce02665753896d"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_Music_HD.png"
     },
     {
         "platform": "iframe",
