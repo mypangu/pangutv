@@ -556,7 +556,6 @@
         let isMuted = false;
 		let retryInterval = null; // For auto-retry timer
 		let currentStreamData = null; // Store current stream data
-		let isDoubleTapping = false;
 
         // Get URL parameters
         function getUrlParams() {
@@ -700,38 +699,7 @@ function setupPlayerEvents() {
         player.setVolume(100);
         player.setMute(false);
         buildQualityMenu();
-        
-// Double-tap for fullscreen (works on mobile)
-const mediaElement = document.querySelector('.jw-media');
-if (mediaElement) {
-    let lastTap = 0;
-    
-    mediaElement.addEventListener('touchend', (e) => {
-        const currentTime = new Date().getTime();
-        const tapLength = currentTime - lastTap;
-        
-        if (tapLength < 300 && tapLength > 0) {
-            // Double tap detected
-            e.preventDefault();
-            e.stopPropagation();
-            isDoubleTapping = true;
-            toggleFullscreen();
-            
-            // Reset flag after a delay
-            setTimeout(() => {
-                isDoubleTapping = false;
-            }, 500);
-        }
-        lastTap = currentTime;
-    });
-    
-    // Keep dblclick for desktop
-    mediaElement.addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleFullscreen();
-    });
-}
+     
     });
 
     player.on('play', function() {
@@ -1135,11 +1103,49 @@ function toggleFullscreen() {
         document.addEventListener('touchstart', resetHideControlsTimer);
         document.addEventListener('touchmove', resetHideControlsTimer);
 
-// Click to toggle controls
-document.getElementById('playerContainer').addEventListener('click', (e) => {
-    // Don't toggle if double-tapping
-    if (isDoubleTapping) {
+// Double-tap and click handling
+let lastTap = 0;
+let tapTimeout = null;
+
+document.getElementById('playerContainer').addEventListener('touchend', (e) => {
+    // Ignore if clicking on controls
+    if (e.target.closest('.controls-overlay') || e.target.closest('.top-bar')) {
         return;
+    }
+    
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    
+    // Clear any pending single-tap
+    clearTimeout(tapTimeout);
+    
+    if (tapLength < 300 && tapLength > 0) {
+        // Double tap detected
+        e.preventDefault();
+        console.log('Double tap detected - entering fullscreen');
+        toggleFullscreen();
+        lastTap = 0; // Reset to prevent triple-tap issues
+    } else {
+        // Single tap - wait to see if another tap comes
+        lastTap = currentTime;
+        tapTimeout = setTimeout(() => {
+            // Single tap confirmed - toggle controls
+            const controlsHidden = document.getElementById('controlsOverlay').classList.contains('hidden');
+            if (controlsHidden) {
+                resetHideControlsTimer();
+            } else {
+                hideControls();
+                clearTimeout(hideControlsTimeout);
+            }
+        }, 300);
+    }
+});
+
+// Desktop click to toggle controls
+document.getElementById('playerContainer').addEventListener('click', (e) => {
+    // Only for desktop (non-touch devices)
+    if ('ontouchstart' in window) {
+        return; // Skip on touch devices
     }
     
     // Don't toggle if clicking on controls
@@ -1154,6 +1160,22 @@ document.getElementById('playerContainer').addEventListener('click', (e) => {
         hideControls();
         clearTimeout(hideControlsTimeout);
     }
+});
+
+// Desktop double-click for fullscreen
+document.getElementById('playerContainer').addEventListener('dblclick', (e) => {
+    // Only for desktop
+    if ('ontouchstart' in window) {
+        return;
+    }
+    
+    if (e.target.closest('.controls-overlay') || e.target.closest('.top-bar')) {
+        return;
+    }
+    
+    e.preventDefault();
+    console.log('Double click detected - entering fullscreen');
+    toggleFullscreen();
 });
 
         // Fullscreen change
