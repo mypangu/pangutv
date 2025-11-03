@@ -478,6 +478,30 @@
         <button id="installBtn">Install</button>
         <button id="dismissBtn">Dismiss</button>
     </div>
+	
+<!-- Temporary debug button -->
+<button id="clearCacheBtn" style="position: fixed; top: 10px; right: 10px; z-index: 9999; background: red; color: white; padding: 10px; border: none; border-radius: 5px; font-weight: bold;">
+    Clear All Cache
+</button>
+
+<script>
+document.getElementById('clearCacheBtn').addEventListener('click', async function() {
+    // Unregister service worker
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for(let registration of registrations) {
+        await registration.unregister();
+    }
+    
+    // Clear all caches
+    const cacheNames = await caches.keys();
+    for(let cacheName of cacheNames) {
+        await caches.delete(cacheName);
+    }
+    
+    alert('All caches cleared! Page will reload.');
+    window.location.reload(true); // Hard reload
+});
+</script>	
 
     <script>
 let allChannels = [];
@@ -717,20 +741,46 @@ function updateSearchURL(searchTerm) {
     window.history.replaceState({}, '', url);
 }
 
-        // Register Service Worker for PWA
-		if ('serviceWorker' in navigator) {
-			window.addEventListener('load', function() {
-				navigator.serviceWorker.register('/sw.js')
-				.then(function(registration) {
-					console.log('ServiceWorker registered successfully:', registration.scope);
-					// Force update check
-					registration.update();
-				})
-				.catch(function(error) {
-					console.log('ServiceWorker registration failed:', error);
-				});
-			});
-		}
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        // First, unregister ALL old service workers
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+                registration.unregister();
+                console.log('Unregistered old service worker');
+            }
+            
+            // Wait a moment, then register the new one
+            setTimeout(function() {
+                navigator.serviceWorker.register('/sw.js')
+                .then(function(registration) {
+                    console.log('ServiceWorker registered successfully:', registration.scope);
+                    
+                    // Force immediate update
+                    registration.update();
+                    
+                    // Listen for updates
+                    registration.addEventListener('updatefound', function() {
+                        const newWorker = registration.installing;
+                        console.log('New service worker found, installing...');
+                        
+                        newWorker.addEventListener('statechange', function() {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('New service worker installed, reloading page...');
+                                // Force reload to activate new service worker
+                                window.location.reload();
+                            }
+                        });
+                    });
+                })
+                .catch(function(error) {
+                    console.log('ServiceWorker registration failed:', error);
+                });
+            }, 500);
+        });
+    });
+}
 
 // ============================================
 // VOICE SEARCH - WITH SMART ERROR HANDLING
