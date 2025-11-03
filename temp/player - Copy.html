@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <title>Live TV Player</title>
+	
+	<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
+    <!-- JW Player -->
+    <script src="https://ssl.p.jwpcdn.com/player/v/8.38.7/jwplayer.js"></script>
+    <script>jwplayer.key = "jTL7dlu7ybUI5NZnDdVgb1laM8/Hj3ftIJ5Vqg==";</script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        body.hide-cursor,
+        body.hide-cursor * {
+            cursor: none !important;
+        }
+
+        body.hide-cursor .controls-overlay,
+        body.hide-cursor .top-bar,
+        body.hide-cursor button {
+            cursor: pointer !important;
+        }
+
+        .player-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+
+        /* JW Player Container */
+        #jwplayer-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #jwplayer-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Force stretch mode for video */
+        .jw-video {
+            object-fit: fill !important;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            z-index: 100;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-screen.hidden {
+			display: none !important;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #ff0075;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 1.5rem;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+/* Buffering Overlay (transparent, only spinner) */
+.buffering-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    z-index: 25;
+    pointer-events: none;
+}
+
+.buffering-overlay .spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #ff0075;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    filter: drop-shadow(0 0 10px rgba(255, 0, 117, 0.5));
+}
+
+.buffering-overlay.show {
+    display: flex;
+}
+
+        /* Top Bar */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+            padding: max(1.5rem, env(safe-area-inset-top)) 2rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 50;
+            transform: translateY(0);
+            opacity: 1;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .top-bar.hidden {
+            opacity: 0;
+            transform: translateY(-100%);
+            pointer-events: none;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn:hover,
+        .back-btn:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+            outline: none;
+        }
+
+        .back-btn:focus-visible {
+            outline: 3px solid #ff0075;
+            outline-offset: 2px;
+        }
+
+        /* Controls Overlay */
+        .controls-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+            padding: 2rem 2rem max(1.5rem, env(safe-area-inset-bottom));
+            transform: translateY(0);
+            opacity: 1;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 50;
+        }
+
+        .controls-overlay.hidden {
+            opacity: 0;
+            transform: translateY(100%);
+            pointer-events: none;
+        }
+
+        /* Channel Info */
+        .channel-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .channel-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .channel-meta {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .meta-badge {
+            font-size: 0.9rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #ff0075;
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Player Controls */
+        .player-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .controls-left,
+        .controls-right {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .control-btn:hover,
+        .control-btn:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+            outline: none;
+        }
+
+        .control-btn:focus-visible {
+            outline: 3px solid #ff0075;
+            outline-offset: 2px;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Quality Menu */
+        .quality-menu {
+            position: relative;
+        }
+
+        .quality-panel {
+            position: absolute;
+            bottom: 60px;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            border-radius: 12px;
+            padding: 0.5rem 0;
+            min-width: 120px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            transform-origin: bottom right;
+            transform: scaleY(0);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .quality-menu.open .quality-panel {
+            transform: scaleY(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .quality-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            width: 100%;
+            text-align: center;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quality-btn:hover,
+        .quality-btn:focus {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ff0075;
+            outline: none;
+        }
+
+        .quality-btn:focus-visible {
+            outline: 2px solid #ff0075;
+            outline-offset: -2px;
+        }
+
+        /* Error Screen */
+.error-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    z-index: 100; /* Higher than buffering overlay */
+    padding: 2rem;
+    text-align: center;
+}
+
+        .error-screen.show {
+            display: flex;
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-message {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 2rem;
+            max-width: 500px;
+        }
+
+        .error-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover,
+        .btn:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff0075, #ff4d00);
+            border-color: transparent;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #ff1a85, #ff5d10);
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .channel-title {
+                font-size: 1.2rem;
+            }
+
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
+            }
+
+            .controls-overlay {
+                padding: 1.5rem 1rem 1rem;
+            }
+
+            .top-bar {
+                padding: 1rem;
+            }
+
+            .back-btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* TV Optimizations */
+        @media (min-width: 1920px) {
+            .channel-title {
+                font-size: 2rem;
+            }
+
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+
+            .back-btn {
+                padding: 1rem 2rem;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container" id="playerContainer">
+        <!-- Top Bar -->
+        <div class="top-bar" id="topBar">
+            <button class="back-btn" id="backBtn" tabindex="1">
+                <span>←</span> Back to Channels
+            </button>
+        </div>
+
+        <!-- Loading Screen (Initial Load) -->
+		<div class="loading-screen" id="loadingScreen">
+			<div class="spinner"></div>
+			<div class="loading-text">Loading channel...</div>
+		</div>
+
+		<!-- Buffering Overlay (Transparent, shown during playback buffering) -->
+		<div class="buffering-overlay" id="bufferingOverlay">
+			<div class="spinner"></div>
+		</div>
+
+        <!-- Error Screen -->
+        <div class="error-screen" id="errorScreen">
+            <div class="error-icon">⚠️</div>
+            <div class="error-title">Unable to load channel</div>
+            <div class="error-message" id="errorMessage">Please check your internet connection and try again.</div>
+            <div class="error-buttons">
+                <button class="btn btn-primary" id="retryBtn" tabindex="2">Retry</button>
+                <button class="btn" id="backToChannelsBtn" tabindex="3">Back to Channels</button>
+            </div>
+        </div>
+
+        <!-- JW Player -->
+        <div id="jwplayer-wrapper">
+            <div id="jwplayer-container"></div>
+        </div>
+
+        <!-- Controls Overlay -->
+        <div class="controls-overlay" id="controlsOverlay">
+            <div class="channel-info">
+                <div class="channel-title" id="channelTitle">Loading...</div>
+                <div class="channel-meta">
+                    <span class="live-indicator">
+                        <span class="live-dot"></span>
+                        LIVE
+                    </span>
+                    <span class="meta-badge" id="channelLanguage">-</span>
+                    <span class="meta-badge" id="channelCategory">-</span>
+                </div>
+            </div>
+
+            <div class="player-controls">
+                <div class="controls-left">
+                    <button class="control-btn" id="playPauseBtn" tabindex="4" title="Play/Pause">
+                        <span id="playIcon">▶️</span>
+                        <span id="pauseIcon" style="display:none;">⏸️</span>
+                    </button>
+                    <button class="control-btn" id="muteBtn" tabindex="5" title="Mute/Unmute">
+                        <span id="volumeOnIcon">🔊</span>
+                        <span id="volumeOffIcon" style="display:none;">🔇</span>
+                    </button>
+                </div>
+
+                <div class="controls-right">
+                    <div class="quality-menu" id="qualityMenu">
+                        <button class="control-btn" id="qualityBtn" tabindex="6" title="Quality">⚙️</button>
+                        <div class="quality-panel" id="qualityPanel"></div>
+                    </div>
+                    <button class="control-btn" id="fullscreenBtn" tabindex="7" title="Fullscreen">
+                        <span id="enterFsIcon">⛶</span>
+                        <span id="exitFsIcon" style="display:none;">⛶</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let player;
+        let currentChannel = null;
+        let hideControlsTimeout = null;
+        let channelsData = [];
+        let isPlaying = false;
+        let isMuted = false;
+		let retryInterval = null; // For auto-retry timer
+		let currentStreamData = null; // Store current stream data
+
+        // Get URL parameters
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                id: params.get('id')
+            };
+        }
+
+        // Load channel data
+        async function loadChannelData() {
+            try {
+                const response = await fetch('channel_details.json');
+                if (!response.ok) throw new Error('Failed to load channels');
+                channelsData = await response.json();
+                return channelsData;
+            } catch (error) {
+                console.error('Error loading channels:', error);
+                return [];
+            }
+        }
+
+        // Find channel by ID
+        function findChannel(id) {
+            return channelsData.find(ch => ch.id === id);
+        }
+
+        // Fetch stream details from API
+        async function fetchStreamDetails(channelId) {
+            const base = "https://oxo.porus-in2012.workers.dev/https://playyonogames.in/";
+            try {
+                const response = await fetch(base + "rest_api.php?action=get_channel_detail&id=" + channelId);
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    const isDRM = data.data.title.includes("*");
+                    return {
+                        isDRM: isDRM,
+                        streamUrl: isDRM 
+                            ? base + "dlive.php?id=" + channelId + "&format=.mpd"
+                            : base + "live.php?id=" + channelId + "&format=.m3u8",
+                        licenseUrl: isDRM ? base + "dlive.php?id=" + channelId + "&wvlic=true" : null,
+                        title: data.data.title
+                    };
+                }
+                throw new Error(data.message || "Failed to fetch stream");
+            } catch (error) {
+                console.error('Error fetching stream:', error);
+                throw error;
+            }
+        }
+		
+// Use native HLS for mobile compatibility
+function initializeNativeHLS(streamData) {
+    const videoElement = document.createElement('video');
+    videoElement.id = 'native-video';
+    videoElement.style.width = '100%';
+    videoElement.style.height = '100%';
+    videoElement.style.objectFit = 'fill';
+    videoElement.controls = false;
+    videoElement.autoplay = true;
+    videoElement.playsInline = true;
+    
+    const wrapper = document.getElementById('jwplayer-wrapper');
+    wrapper.innerHTML = '';
+    wrapper.appendChild(videoElement);
+    
+    // ✅ ADD THESE EVENT LISTENERS for button state sync
+    videoElement.addEventListener('play', function() {
+        console.log('Native video playing');
+        isPlaying = true;
+        document.getElementById('playIcon').style.display = 'none';
+        document.getElementById('pauseIcon').style.display = 'block';
+        hideLoading();
+        hideBuffering();
+    });
+    
+    videoElement.addEventListener('pause', function() {
+        console.log('Native video paused');
+        isPlaying = false;
+        document.getElementById('playIcon').style.display = 'block';
+        document.getElementById('pauseIcon').style.display = 'none';
+    });
+    
+    videoElement.addEventListener('waiting', function() {
+        console.log('Native video buffering');
+        showBuffering();
+    });
+    
+    videoElement.addEventListener('playing', function() {
+        console.log('Native video resumed playing');
+        hideBuffering();
+    });
+    
+    videoElement.addEventListener('volumechange', function() {
+        isMuted = videoElement.muted;
+        document.getElementById('volumeOnIcon').style.display = isMuted ? 'none' : 'block';
+        document.getElementById('volumeOffIcon').style.display = isMuted ? 'block' : 'none';
+    });
+    
+    // Rest of your HLS.js code...
+    if (Hls.isSupported()) {
+        const hls = new Hls({
+            xhrSetup: function(xhr, url) {
+                xhr.setRequestHeader('Referer', window.location.href);
+            }
+        });
+        
+        hls.loadSource(streamData.streamUrl);
+        hls.attachMedia(videoElement);
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            hideLoading();
+            videoElement.play();
+        });
+        
+        hls.on(Hls.Events.ERROR, function(event, data) {
+            console.error('HLS error:', data);
+            if (data.fatal) {
+                showError('Stream error: ' + data.type);
+            }
+        });
+        
+        window.hlsPlayer = hls;
+        
+    } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+        videoElement.src = streamData.streamUrl;
+        videoElement.addEventListener('loadedmetadata', function() {
+            hideLoading();
+            videoElement.play();
+        });
+    }
+    
+    // ✅ Hide quality button for native HLS (quality switching not supported)
+    const qualityBtn = document.getElementById('qualityBtn');
+    if (qualityBtn) {
+        qualityBtn.style.opacity = '0.3';
+        qualityBtn.style.pointerEvents = 'none';
+        qualityBtn.title = 'Quality selection not available';
+    }
+}		
+
+// Initialize JW Player
+function initializePlayer(streamData) {
+    const config = {
+        file: streamData.streamUrl,
+        type: streamData.streamType || (streamData.isDRM ? "dash" : "hls"),
+        autostart: true,
+        controls: false,
+        width: "100%",
+        height: "100%",
+        stretching: "exactfit",
+        playbackRateControls: false,
+        preload: "auto"
+    };
+
+    if (streamData.isDRM && streamData.licenseUrl) {
+        config.drm = {
+            widevine: { url: streamData.licenseUrl }
+        };
+    }
+
+    player = jwplayer("jwplayer-container").setup(config);
+    
+    setTimeout(() => hideLoading(), 2000);
+    
+    setupPlayerEvents();
+    
+    // ✅ Re-enable quality button for JW Player
+    const qualityBtn = document.getElementById('qualityBtn');
+    if (qualityBtn) {
+        qualityBtn.style.opacity = '1';
+        qualityBtn.style.pointerEvents = 'auto';
+        qualityBtn.title = 'Quality';
+    }
+}
+
+// Setup player events
+function setupPlayerEvents() {
+    let hasStartedPlaying = false; // Track if video has started at least once
+
+    player.on('ready', function() {
+        console.log('Player ready');
+        hideLoading();
+        player.setVolume(100);
+        player.setMute(false);
+        buildQualityMenu();
+     
+    });
+
+    player.on('play', function() {
+        console.log('Player playing');
+        hideLoading(); // Hide initial loading
+        hideBuffering(); // Hide buffering overlay
+        hasStartedPlaying = true;
+        isPlaying = true;
+        document.getElementById('playIcon').style.display = 'none';
+        document.getElementById('pauseIcon').style.display = 'block';
+    });
+
+    player.on('pause', function() {
+        isPlaying = false;
+        document.getElementById('playIcon').style.display = 'block';
+        document.getElementById('pauseIcon').style.display = 'none';
+    });
+
+    player.on('buffer', function() {
+        console.log('Player buffering, hasStartedPlaying:', hasStartedPlaying);
+        
+        if (hasStartedPlaying) {
+            // Video has already started - show transparent buffering overlay
+            showBuffering();
+        } else {
+            // Initial load - show full loading screen
+            showLoading();
+        }
+    });
+
+    player.on('idle', function() {
+        console.log('Player idle');
+        hideLoading();
+        hideBuffering();
+    });
+
+    player.on('firstFrame', function() {
+        console.log('First frame displayed');
+        hideLoading(); // Hide initial loading
+        hasStartedPlaying = true;
+    });
+
+    player.on('complete', function() {
+        hideLoading();
+        hideBuffering();
+    });
+
+    player.on('error', function(e) {
+        console.error('Player error:', e);
+        hideLoading();
+        hideBuffering();
+        showError('Playback error: Unable to load stream');
+    });
+
+    player.on('levels', buildQualityMenu);
+    
+    // Safety timeout: Force hide loading after 8 seconds
+    setTimeout(() => {
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (!loadingScreen.classList.contains('hidden')) {
+            console.log('Force hiding loading screen after timeout');
+            hideLoading();
+            hasStartedPlaying = true;
+        }
+    }, 8000);
+}
+
+        // Build quality menu
+        function buildQualityMenu() {
+            const levels = player.getQualityLevels();
+            const panel = document.getElementById('qualityPanel');
+            panel.innerHTML = '';
+
+            if (!levels || levels.length === 0) return;
+
+            // Auto quality
+            const autoBtn = document.createElement('button');
+            autoBtn.className = 'quality-btn';
+            autoBtn.textContent = 'Auto';
+            autoBtn.onclick = () => {
+                player.setCurrentQuality(-1);
+                document.getElementById('qualityMenu').classList.remove('open');
+            };
+            panel.appendChild(autoBtn);
+
+            // Individual quality levels
+            const added = new Set();
+            levels.forEach((level, index) => {
+                const label = level.label?.trim();
+                if (!label || label.toLowerCase() === 'auto' || added.has(label)) return;
+                
+                added.add(label);
+                const btn = document.createElement('button');
+                btn.className = 'quality-btn';
+                btn.textContent = label;
+                btn.onclick = () => {
+                    player.setCurrentQuality(index);
+                    document.getElementById('qualityMenu').classList.remove('open');
+                };
+                panel.appendChild(btn);
+            });
+        }
+
+// Load and play channel
+async function loadChannel(channelId) {
+    if (!channelId) {
+        showError('No channel selected');
+        return;
+    }
+
+    showLoading();
+
+    try {
+        // Load channel data from JSON
+        await loadChannelData();
+        currentChannel = findChannel(channelId);
+
+        if (!currentChannel) {
+            showError('Channel not found');
+            return;
+        }
+
+        // Update channel info
+        updateChannelInfo(currentChannel);
+
+        let streamData;
+
+        // ✅ NEW: Check if direct stream URL exists in JSON
+// In the direct_stream section of loadChannel():
+if (currentChannel.direct_stream) {
+    console.log('Using direct stream from JSON:', currentChannel.direct_stream);
+    
+    // ✅ Detect format from URL extension
+    const streamUrl = currentChannel.direct_stream;
+    const isDRM = currentChannel.title.includes("*");
+    const isMPD = streamUrl.includes('.mpd');
+    
+    streamData = {
+        isDRM: isDRM,
+        streamUrl: streamUrl,
+        licenseUrl: isDRM ? currentChannel.license_url : null,
+        title: currentChannel.title,
+        streamType: isMPD ? "dash" : "hls"  // ✅ Add stream type
+    };
+    
+    // Store for retry
+    currentStreamData = streamData;
+    
+    // Setup auto-retry if needed
+    if (currentChannel.retry === "yes") {
+        setupAutoRetry();
+    }
+} else {
+            // No direct stream - fetch from API
+            console.log('No direct stream found, fetching from API for id:', currentChannel.id);
+            streamData = await fetchStreamDetails(currentChannel.id);
+			
+			// Store stream data globally for retry mechanism
+			currentStreamData = streamData;
+
+			// NEW: Setup auto-retry if "retry": "yes" in channel data
+			if (currentChannel.retry === "yes") {
+				setupAutoRetry();
+			}
+        }
+		
+		
+
+/*
+if (streamData.isDRM) {
+    initializePlayer(streamData); // Use JW Player for DRM
+} else {
+    initializeNativeHLS(streamData); // Use HLS.js for non-DRM
+}
+*/
+
+initializePlayer(streamData); // Test: Always use JW Player
+
+    } catch (error) {
+        console.error('Error loading channel:', error);
+        showError(error.message || 'Failed to load channel');
+    }
+}
+
+// Setup automatic stream retry every 2 minutes
+function setupAutoRetry() {
+    // Clear any existing retry interval
+    if (retryInterval) {
+        clearInterval(retryInterval);
+    }
+
+    console.log('Auto-retry enabled: Stream will refresh every 2 minutes');
+
+    // Set interval to refresh stream every 2 minutes (120000 ms)
+    retryInterval = setInterval(async () => {
+        if (!currentChannel || !player) return;
+
+        console.log('Auto-retry triggered: Refreshing stream...');
+
+        try {
+            let newStreamData;
+
+            // Check if using direct stream or API
+            if (currentChannel.direct_stream) {
+                const isDRM = currentChannel.title.includes("*");
+                newStreamData = {
+                    isDRM: isDRM,
+                    streamUrl: currentChannel.direct_stream,
+                    licenseUrl: isDRM ? currentChannel.license_url : null,
+                    title: currentChannel.title
+                };
+            } else {
+                // Fetch fresh stream URL from API
+                newStreamData = await fetchStreamDetails(currentChannel.id);
+            }
+
+            // Update stored stream data
+            currentStreamData = newStreamData;
+
+            // Get current player state
+            const currentTime = player.getPosition();
+            const wasMuted = player.getMute();
+            const currentVolume = player.getVolume();
+
+            // Reload player with new stream
+            player.load({
+                file: newStreamData.streamUrl,
+                type: newStreamData.isDRM ? "dash" : "hls"
+            });
+
+            // Restore player state
+            player.setMute(wasMuted);
+            player.setVolume(currentVolume);
+            player.play();
+
+            console.log('Stream refreshed successfully');
+
+        } catch (error) {
+            console.error('Auto-retry failed:', error);
+            // Continue with existing stream on error
+        }
+    }, 120000); // 2 minutes = 120000 milliseconds
+}
+
+        // Update channel information
+        function updateChannelInfo(channel) {
+            document.getElementById('channelTitle').textContent = channel.title || 'Unknown Channel';
+            document.getElementById('channelLanguage').textContent = channel.language || 'N/A';
+            document.getElementById('channelCategory').textContent = channel.channel || 'N/A';
+            document.title = `${channel.title} - Live TV`;
+        }
+
+        // Show/Hide loading
+function showLoading() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    loadingScreen.classList.remove('hidden');
+    loadingScreen.style.display = 'flex'; // Force display flex
+    console.log('Loading screen shown');
+}
+
+function hideLoading() {
+    const loadingScreen = document.getElementById('loadingScreen');
+    loadingScreen.classList.add('hidden');
+    loadingScreen.style.display = 'none'; // Force display none
+    console.log('Loading screen hidden');
+}
+
+// NEW: Show buffering overlay (transparent)
+function showBuffering() {
+    const bufferingOverlay = document.getElementById('bufferingOverlay');
+    if (bufferingOverlay) {
+        bufferingOverlay.classList.add('show');
+        console.log('Buffering overlay shown');
+    }
+}
+
+// NEW: Hide buffering overlay
+function hideBuffering() {
+    const bufferingOverlay = document.getElementById('bufferingOverlay');
+    if (bufferingOverlay) {
+        bufferingOverlay.classList.remove('show');
+        console.log('Buffering overlay hidden');
+    }
+}
+
+        // Show error
+        function showError(message) {
+            hideLoading();
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorScreen').classList.add('show');
+        }
+
+        // Control Functions
+function goBack() {
+    // Clear retry interval if exists
+    if (retryInterval) {
+        clearInterval(retryInterval);
+        retryInterval = null;
+    }
+    
+    if (player) player.remove();
+    window.history.back();
+}
+
+function togglePlayPause() {
+    // Check if using native video element (HLS.js)
+    const nativeVideo = document.getElementById('native-video');
+    if (nativeVideo) {
+        if (nativeVideo.paused) {
+            nativeVideo.play();
+        } else {
+            nativeVideo.pause();
+        }
+        return;
+    }
+    
+    // JW Player
+    if (!player) return;
+    const state = player.getState();
+    if (state === 'playing') {
+        player.pause();
+    } else {
+        player.play();
+    }
+}
+
+function toggleMute() {
+    // Check if using native video element (HLS.js)
+    const nativeVideo = document.getElementById('native-video');
+    if (nativeVideo) {
+        nativeVideo.muted = !nativeVideo.muted;
+        isMuted = nativeVideo.muted;
+        
+        document.getElementById('volumeOnIcon').style.display = isMuted ? 'none' : 'block';
+        document.getElementById('volumeOffIcon').style.display = isMuted ? 'block' : 'none';
+        return;
+    }
+    
+    // JW Player
+    if (!player) return;
+    const muted = player.getMute();
+    player.setMute(!muted);
+    isMuted = !muted;
+    
+    document.getElementById('volumeOnIcon').style.display = isMuted ? 'none' : 'block';
+    document.getElementById('volumeOffIcon').style.display = isMuted ? 'block' : 'none';
+}
+
+function toggleFullscreen() {
+    const container = document.getElementById('playerContainer');
+    
+    if (!document.fullscreenElement) {
+        // Entering fullscreen
+        container.requestFullscreen().then(() => {
+            console.log('Entered fullscreen');
+            
+            // Update fullscreen icons
+            document.getElementById('enterFsIcon').style.display = 'none';
+            document.getElementById('exitFsIcon').style.display = 'block';
+            
+            // On mobile, try to lock orientation to landscape
+            if (screen.orientation && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                screen.orientation.lock('landscape').then(() => {
+                    console.log('Orientation locked to landscape');
+                }).catch(err => {
+                    console.log('Orientation lock failed (may not be supported):', err);
+                });
+            }
+        }).catch(err => {
+            console.error('Fullscreen error:', err);
+        });
+    } else {
+        // Exiting fullscreen
+        document.exitFullscreen().then(() => {
+            console.log('Exited fullscreen');
+            
+            // Update fullscreen icons
+            document.getElementById('enterFsIcon').style.display = 'block';
+            document.getElementById('exitFsIcon').style.display = 'none';
+            
+            // Unlock orientation when exiting fullscreen
+            if (screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+                console.log('Orientation unlocked');
+            }
+        });
+    }
+}
+
+        // Controls visibility management
+        function showControls() {
+            document.getElementById('controlsOverlay').classList.remove('hidden');
+            document.getElementById('topBar').classList.remove('hidden');
+            document.body.classList.remove('hide-cursor');
+        }
+
+        function hideControls() {
+            document.getElementById('controlsOverlay').classList.add('hidden');
+            document.getElementById('topBar').classList.add('hidden');
+            document.body.classList.add('hide-cursor');
+        }
+
+        function resetHideControlsTimer() {
+            clearTimeout(hideControlsTimeout);
+            showControls();
+            hideControlsTimeout = setTimeout(() => {
+                hideControls();
+            }, 3000);
+        }
+
+        // Event Listeners
+        document.getElementById('backBtn').addEventListener('click', goBack);
+        document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
+        document.getElementById('muteBtn').addEventListener('click', toggleMute);
+        document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+        document.getElementById('retryBtn').addEventListener('click', () => {
+            if (currentChannel) {
+                document.getElementById('errorScreen').classList.remove('show');
+                loadChannel(currentChannel.id);
+            }
+        });
+        document.getElementById('backToChannelsBtn').addEventListener('click', goBack);
+
+        // Quality menu toggle
+        document.getElementById('qualityBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('qualityMenu').classList.toggle('open');
+        });
+
+        // Close quality menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('qualityMenu');
+            if (!menu.contains(e.target)) {
+                menu.classList.remove('open');
+            }
+        });
+		
+// ============ UNIFIED TAP/CLICK HANDLING ============
+let lastTap = 0;
+let tapTimeout = null;
+let isTouchDevice = 'ontouchstart' in window;
+
+// For TOUCH devices (mobile/tablet)
+if (isTouchDevice) {
+    document.getElementById('jwplayer-wrapper').addEventListener('touchend', (e) => {
+		// No need to check for buttons anymore since we're only on video area
+    
+		const currentTime = new Date().getTime();
+		const tapLength = currentTime - lastTap;
+    
+		if (tapLength < 300 && tapLength > 0) {
+			// DOUBLE TAP detected
+			clearTimeout(tapTimeout);
+			e.preventDefault();
+			console.log('✅ Double tap - entering fullscreen');
+			toggleFullscreen();
+			lastTap = 0;
+		} else {
+            // SINGLE TAP - wait to confirm
+            lastTap = currentTime;
+            clearTimeout(tapTimeout);
+            
+            tapTimeout = setTimeout(() => {
+                console.log('✅ Single tap - toggling controls');
+                
+                const controlsOverlay = document.getElementById('controlsOverlay');
+                const topBar = document.getElementById('topBar');
+                const isHidden = controlsOverlay.classList.contains('hidden');
+                
+                if (isHidden) {
+                    // SHOW controls
+                    controlsOverlay.classList.remove('hidden');
+                    topBar.classList.remove('hidden');
+                    document.body.classList.remove('hide-cursor');
+                    
+                    // Auto-hide after 3 seconds
+                    clearTimeout(hideControlsTimeout);
+                    hideControlsTimeout = setTimeout(() => {
+                        controlsOverlay.classList.add('hidden');
+                        topBar.classList.add('hidden');
+                        document.body.classList.add('hide-cursor');
+                    }, 3000);
+                } else {
+                    // HIDE controls
+                    controlsOverlay.classList.add('hidden');
+                    topBar.classList.add('hidden');
+                    document.body.classList.add('hide-cursor');
+                    clearTimeout(hideControlsTimeout);
+                }
+            }, 300);
+        }
+    });
+    
+    // Show controls on touch move (dragging finger)
+    document.getElementById('jwplayer-wrapper').addEventListener('touchmove', (e) => {
+		// Remove the if check for controls
+    
+		const controlsOverlay = document.getElementById('controlsOverlay');
+		const topBar = document.getElementById('topBar');
+    
+		if (controlsOverlay.classList.contains('hidden')) {
+			controlsOverlay.classList.remove('hidden');
+			topBar.classList.remove('hidden');
+			document.body.classList.remove('hide-cursor');
+		}
+    
+		clearTimeout(hideControlsTimeout);
+		hideControlsTimeout = setTimeout(() => {
+			controlsOverlay.classList.add('hidden');
+			topBar.classList.add('hidden');
+			document.body.classList.add('hide-cursor');
+		}, 3000);
+	});
+}
+
+// For DESKTOP (mouse)
+if (!isTouchDevice) {
+    // Mouse movement shows controls
+    document.addEventListener('mousemove', () => {
+        const controlsOverlay = document.getElementById('controlsOverlay');
+        const topBar = document.getElementById('topBar');
+        
+        controlsOverlay.classList.remove('hidden');
+        topBar.classList.remove('hidden');
+        document.body.classList.remove('hide-cursor');
+        
+        clearTimeout(hideControlsTimeout);
+        hideControlsTimeout = setTimeout(() => {
+            controlsOverlay.classList.add('hidden');
+            topBar.classList.add('hidden');
+            document.body.classList.add('hide-cursor');
+        }, 3000);
+    });
+    
+    // Single click toggles controls
+    document.getElementById('playerContainer').addEventListener('click', (e) => {
+        if (e.target.closest('.controls-overlay') || 
+            e.target.closest('.top-bar') || 
+            e.target.closest('button')) {
+            return;
+        }
+        
+        const controlsOverlay = document.getElementById('controlsOverlay');
+        const topBar = document.getElementById('topBar');
+        const isHidden = controlsOverlay.classList.contains('hidden');
+        
+        if (isHidden) {
+            controlsOverlay.classList.remove('hidden');
+            topBar.classList.remove('hidden');
+            document.body.classList.remove('hide-cursor');
+            
+            clearTimeout(hideControlsTimeout);
+            hideControlsTimeout = setTimeout(() => {
+                controlsOverlay.classList.add('hidden');
+                topBar.classList.add('hidden');
+                document.body.classList.add('hide-cursor');
+            }, 3000);
+        } else {
+            controlsOverlay.classList.add('hidden');
+            topBar.classList.add('hidden');
+            document.body.classList.add('hide-cursor');
+            clearTimeout(hideControlsTimeout);
+        }
+    });
+    
+    // Double click for fullscreen
+    document.getElementById('playerContainer').addEventListener('dblclick', (e) => {
+        if (e.target.closest('.controls-overlay') || 
+            e.target.closest('.top-bar') || 
+            e.target.closest('button')) {
+            return;
+        }
+        
+        e.preventDefault();
+        console.log('✅ Double click - entering fullscreen');
+        toggleFullscreen();
+    });
+}		
+
+        // Fullscreen change
+        document.addEventListener('fullscreenchange', () => {
+            const isFullscreen = !!document.fullscreenElement;
+            document.getElementById('enterFsIcon').style.display = isFullscreen ? 'none' : 'block';
+            document.getElementById('exitFsIcon').style.display = isFullscreen ? 'block' : 'none';
+        });
+
+        // Keyboard controls (TV Remote + Desktop)
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'Escape':
+                case 'Backspace':
+                    e.preventDefault();
+                    goBack();
+                    break;
+                case ' ':
+                case 'MediaPlayPause':
+                    e.preventDefault();
+                    togglePlayPause();
+                    resetHideControlsTimer();
+                    break;
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+                case 'm':
+                case 'M':
+                    e.preventDefault();
+                    toggleMute();
+                    resetHideControlsTimer();
+                    break;
+                case 'ArrowUp':
+                case 'ArrowDown':
+                case 'ArrowLeft':
+                case 'ArrowRight':
+                    resetHideControlsTimer();
+                    break;
+            }
+        });
+
+        // Initialize
+        const params = getUrlParams();
+        if (params.id) {
+            loadChannel(params.id);
+        } else {
+            showError('No channel ID provided');
+        }
+
+        // Show controls initially
+        showControls();
+        hideControlsTimeout = setTimeout(() => {
+            hideControls();
+        }, 3000);
+		
+// Register Service Worker for PWA features
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+        .then(function(registration) {
+            console.log('✅ ServiceWorker registered for PWA:', registration.scope);
+            
+            // Check for updates
+            registration.update();
+            
+            // Handle updates
+            registration.addEventListener('updatefound', function() {
+                const newWorker = registration.installing;
+                console.log('New service worker found');
+                
+                newWorker.addEventListener('statechange', function() {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log('New service worker installed, will activate on next page load');
+                        // Optionally show update notification to user
+                    }
+                });
+            });
+        })
+        .catch(function(error) {
+            console.log('ServiceWorker registration failed:', error);
+        });
+    });
+}
+    </script>
+</body>
+</html>

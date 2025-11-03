@@ -99,6 +99,93 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+		
+.logo-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.local-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.local-filter:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 0, 117, 0.3);
+}
+
+.local-filter input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #ff0075;
+}
+
+.local-filter label {
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.9);
+    user-select: none;
+}
+
+.info-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.info-btn:hover {
+    background: linear-gradient(135deg, #ff0075, #ff4d00);
+    transform: scale(1.1);
+}
+
+.info-tooltip {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    max-width: 300px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.info-tooltip.show {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}		
 
 .search-bar {
     flex: 1;
@@ -377,6 +464,27 @@
     .logo {
         font-size: 1.25rem;
     }
+	
+	.logo-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .local-filter {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .local-filter label {
+        font-size: 0.8rem;
+    }
+
+    .info-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 0.75rem;
+    }	
 
     .header-content {
         flex-direction: column;
@@ -435,12 +543,30 @@
         text-align: center;
     }
 }
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+}
     </style>
 </head>
 <body>
     <header class="header">
         <div class="header-content">
-            <div class="logo">📺 Live TV</div>
+            <div class="logo-controls">
+				<div class="logo">📺 Live TV</div>
+				<div class="local-filter">
+					<input type="checkbox" id="localCheckbox">
+					<label for="localCheckbox">Local</label>
+					<button class="info-btn" id="infoBtn" title="Info">i</button>
+				</div>
+			</div>
             <div class="header-controls">
                 <div class="language-selector">
                     <select id="languageSelect">
@@ -485,6 +611,7 @@ let allChannels = [];
 let filteredChannels = [];
 let selectedLanguage = 'Tamil';
 let searchQuery = '';
+let showLocalOnly = false;
 let deferredPrompt;
 
 // PWA Install Prompt Management
@@ -556,12 +683,19 @@ if (dismissBtn) {
 }
 
         // Load saved language preference
-        function loadSavedLanguage() {
-            const saved = localStorage.getItem('selectedLanguage');
-            if (saved) {
-                selectedLanguage = saved;
-            }
-        }
+function loadSavedLanguage() {
+    const saved = localStorage.getItem('selectedLanguage');
+    if (saved) {
+        selectedLanguage = saved;
+    }
+    
+    // Load local filter preference
+    const savedLocal = localStorage.getItem('showLocalOnly');
+    if (savedLocal === 'true') {
+        showLocalOnly = true;
+        document.getElementById('localCheckbox').checked = true;
+    }
+}
 
         // Save language preference
         function saveLanguage(language) {
@@ -593,6 +727,83 @@ if (dismissBtn) {
                 document.getElementById('loading').style.color = '#ff0075';
             }
         }
+		
+// Local channel filter checkbox
+const localCheckbox = document.getElementById('localCheckbox');
+const infoBtn = document.getElementById('infoBtn');
+
+localCheckbox.addEventListener('change', (e) => {
+    showLocalOnly = e.target.checked;
+    filterChannels();
+    
+    // Save preference
+    localStorage.setItem('showLocalOnly', showLocalOnly);
+    
+    // Show feedback
+    const feedback = document.createElement('div');
+    feedback.style.cssText = `
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #ff0075, #ff4d00);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+    feedback.textContent = showLocalOnly ? '📍 Showing local channels only' : '🌐 Showing NON-LOCAL channels only';
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+        feedback.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => feedback.remove(), 300);
+    }, 2000);
+});
+
+// Info button tooltip
+let tooltip = null;
+
+infoBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    
+    // Remove existing tooltip
+    if (tooltip) {
+        tooltip.remove();
+        tooltip = null;
+        return;
+    }
+    
+    // Create tooltip
+    tooltip = document.createElement('div');
+    tooltip.className = 'info-tooltip show';
+    tooltip.innerHTML = `
+		<strong>📍 Local Channels Toggle</strong><br><br>
+		<strong>Unchecked:</strong> Shows non-local channels<br>
+		<strong>Checked:</strong> Shows local channels only<br><br>
+		Local channels are region-specific based on your selected language.
+	`;
+    
+    // Position tooltip
+    const rect = infoBtn.getBoundingClientRect();
+    tooltip.style.top = (rect.bottom + 10) + 'px';
+    tooltip.style.left = Math.min(rect.left, window.innerWidth - 320) + 'px';
+    
+    document.body.appendChild(tooltip);
+    
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function closeTooltip() {
+            if (tooltip) {
+                tooltip.remove();
+                tooltip = null;
+            }
+            document.removeEventListener('click', closeTooltip);
+        });
+    }, 100);
+});		
 
         // Get unique languages
         function getLanguages() {
@@ -624,16 +835,24 @@ if (dismissBtn) {
         }
 
         // Filter channels
-        function filterChannels() {
-            filteredChannels = allChannels.filter(channel => {
-                const matchesLanguage = selectedLanguage === 'All' || channel.language === selectedLanguage;
-                const matchesSearch = channel.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    (channel.language && channel.language.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                                    (channel.channel && channel.channel.toLowerCase().includes(searchQuery.toLowerCase()));
-                return matchesLanguage && matchesSearch;
-            });
-            renderChannels();
-        }
+function filterChannels() {
+    filteredChannels = allChannels.filter(channel => {
+        const matchesLanguage = selectedLanguage === 'All' || channel.language === selectedLanguage;
+        const matchesSearch = channel.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (channel.language && channel.language.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                            (channel.channel && channel.channel.toLowerCase().includes(searchQuery.toLowerCase()));
+        
+        // NEW LOGIC: 
+        // If showLocalOnly is TRUE (checked) -> show ONLY local channels
+        // If showLocalOnly is FALSE (unchecked) -> show ONLY non-local channels
+        const matchesLocal = showLocalOnly 
+            ? (channel.isLocal === "true" || channel.isLocal === true)  // Show local
+            : !(channel.isLocal === "true" || channel.isLocal === true); // Show non-local
+        
+        return matchesLanguage && matchesSearch && matchesLocal;
+    });
+    renderChannels();
+}
 
         // Group channels by category
         function groupByCategory(channels) {
@@ -1062,6 +1281,12 @@ document.head.appendChild(style);
 // ============================================
 
 document.addEventListener('keydown', (e) => {
+
+	// IGNORE all keyboard shortcuts (Ctrl+C, Ctrl+Shift+R, etc.)
+    if (e.ctrlKey || e.altKey || e.metaKey) {
+        return; // Let browser handle it
+    }
+	
     const searchInput = document.getElementById('searchInput');
     const activeElement = document.activeElement;
     
@@ -1071,40 +1296,8 @@ document.addEventListener('keydown', (e) => {
     const isInTextarea = activeElement.tagName === 'TEXTAREA';
     const isTypingAnywhere = isInInput || isInSelect || isInTextarea;
     
-    // "/" key - Focus search (like YouTube, Reddit)
-    if (e.key === '/' && !isTypingAnywhere) {
-        e.preventDefault();
-        searchInput.focus();
-        searchInput.select();
-        return;
-    }
-    
-    // If in language selector, allow only arrow keys and Enter
+    // If in language selector, let it handle its own keys
     if (isInSelect) {
-        // Allow: Arrow keys, Enter, Escape, Tab
-        const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', 'Tab'];
-        if (!allowedKeys.includes(e.key)) {
-            // Any other key - move to search
-            e.preventDefault();
-            searchInput.focus();
-            if (e.key.length === 1) {
-                searchInput.value = e.key;
-                searchQuery = e.key;
-                filterChannels();
-                updateSearchURL(e.key);
-            }
-        }
-        return;
-    }
-    
-    // If not typing anywhere and letter/number pressed - focus search
-    if (!isTypingAnywhere && e.key.length === 1 && /[a-zA-Z0-9\s]/.test(e.key)) {
-        e.preventDefault();
-        searchInput.focus();
-        searchInput.value = e.key;
-        searchQuery = e.key;
-        filterChannels();
-        updateSearchURL(e.key);
         return;
     }
     
@@ -1122,19 +1315,6 @@ document.addEventListener('keydown', (e) => {
             activeElement.blur();
         }
     }
-});
-
-// Click on language selector - prevent keyboard hijacking
-document.getElementById('languageSelect').addEventListener('focus', (e) => {
-    console.log('Language selector focused');
-});
-
-// When language selector changes, move focus back to search
-document.getElementById('languageSelect').addEventListener('change', (e) => {
-    // After selection, blur the select so typing goes to search
-    setTimeout(() => {
-        e.target.blur();
-    }, 100);
 });
 
     </script>

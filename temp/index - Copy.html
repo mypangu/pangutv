@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="description" content="Watch Live TV Channels - Stream your favorite channels anytime, anywhere">
+    <title>Live TV Streaming</title>
+    <link rel="manifest" href="manifest.json">
+	
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .language-selector {
+            position: relative;
+        }
+
+        .language-selector select {
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            min-width: 150px;
+        }
+
+        .language-selector select:focus {
+            outline: none;
+            border-color: #ff0075;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .language-selector select option {
+            background: #1a1a2e;
+            color: #fff;
+            padding: 0.5rem;
+        }
+
+        .language-selector::after {
+            content: '▼';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff0075, #ff4d00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+.search-bar {
+    flex: 1;
+    position: relative;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    min-width: 0;  /* Important for flex shrinking */
+}
+
+.mic-btn {
+    background: linear-gradient(135deg, #ff0075, #ff4d00);
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.mic-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(255, 0, 117, 0.5);
+}
+
+.mic-btn:active {
+    transform: scale(0.95);
+}
+
+.mic-btn.listening {
+    animation: pulse 1.5s infinite;
+    background: linear-gradient(135deg, #00ff87, #00d4ff);
+}
+
+.mic-icon {
+    font-size: 1.3rem;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 255, 135, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(0, 255, 135, 0);
+    }
+}
+
+.search-bar input {
+    flex: 1;
+    min-width: 0;  /* Allow input to shrink */
+    padding: 0.75rem 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: #ff0075;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+.search-bar input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;  /* Slightly smaller placeholder */
+}
+
+        .filter-section {
+            background: rgba(22, 33, 62, 0.8);
+            padding: 1rem 1.5rem;
+            display: none;
+        }
+
+        .filter-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-bar {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            margin-bottom: 1rem;
+        }
+
+        .filter-bar:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-chips {
+            display: inline-flex;
+            gap: 0.75rem;
+            min-width: min-content;
+        }
+
+        .filter-chip {
+            padding: 0.5rem 1.25rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .filter-chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .filter-chip.active {
+            background: linear-gradient(135deg, #ff0075, #ff4d00);
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .category-section {
+            margin-bottom: 3rem;
+        }
+
+        .category-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid rgba(255, 0, 117, 0.3);
+            display: inline-block;
+        }
+
+        .channels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .channel-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .channel-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 0, 117, 0.3);
+            border-color: rgba(255, 0, 117, 0.5);
+        }
+
+        .channel-logo {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            background: #ffffff;
+            padding: 0.5rem;
+        }
+
+        .channel-info {
+            padding: 1rem;
+        }
+
+        .channel-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .channel-meta {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ff0075, #ff4d00);
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            box-shadow: 0 10px 40px rgba(255, 0, 117, 0.5);
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            z-index: 1000;
+            animation: slideUp 0.5s ease;
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-prompt button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #fff;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .install-prompt button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+    .channels-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1rem;
+    }
+
+    .logo {
+        font-size: 1.25rem;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .header-controls {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .language-selector {
+        flex-shrink: 0;
+    }
+
+    .language-selector select {
+        min-width: 120px;
+        font-size: 0.85rem;
+        padding: 0.65rem 2rem 0.65rem 0.75rem;
+    }
+
+    .search-bar {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .search-bar input {
+        font-size: 0.85rem;
+        padding: 0.65rem 0.75rem;
+    }
+
+    .search-bar input::placeholder {
+        font-size: 0.75rem;  /* Even smaller on mobile */
+    }
+
+    .mic-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+    }
+
+    .mic-icon {
+        font-size: 1.1rem;
+    }
+
+    .category-title {
+        font-size: 1.25rem;
+    }
+
+    .install-prompt {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        flex-direction: column;
+        text-align: center;
+    }
+}
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">📺 Live TV</div>
+            <div class="header-controls">
+                <div class="language-selector">
+                    <select id="languageSelect">
+                        <option value="All">All Languages</option>
+                    </select>
+                </div>
+				<div class="search-bar">
+					<input type="text" id="searchInput" placeholder="Search...">
+					<button id="micBtn" class="mic-btn" title="Voice Search">
+						<span class="mic-icon">🎤</span>
+					</button>
+				</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="filter-section">
+        <div class="filter-label">Language</div>
+        <div class="filter-bar">
+            <div class="filter-chips" id="languageChips"></div>
+        </div>
+        <div class="filter-label" style="margin-top: 1rem;">Category</div>
+        <div class="filter-bar">
+            <div class="filter-chips" id="categoryChips"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="channelsContainer"></div>
+        <div id="loading" class="loading">Loading channels...</div>
+        <div id="noResults" class="no-results" style="display: none;">No channels found</div>
+    </div>
+
+    <div class="install-prompt" id="installPrompt" style="display: none;">
+        <span>Install app for better experience</span>
+        <button id="installBtn">Install</button>
+        <button id="dismissBtn">Dismiss</button>
+    </div>
+
+    <script>
+let allChannels = [];
+let filteredChannels = [];
+let selectedLanguage = 'Tamil';
+let searchQuery = '';
+let deferredPrompt;
+
+// PWA Install Prompt Management
+const INSTALL_DISMISSED_KEY = 'installPromptDismissed';
+
+function hasUserDismissedInstall() {
+    return localStorage.getItem(INSTALL_DISMISSED_KEY) === 'true';
+}
+
+function saveInstallDismissed() {
+    localStorage.setItem(INSTALL_DISMISSED_KEY, 'true');
+}
+
+// Hide prompt by default
+const installPromptEl = document.getElementById('installPrompt');
+if (installPromptEl) {
+    installPromptEl.style.display = 'none';
+}
+
+// PWA Installation
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Only show if user hasn't dismissed AND app not installed
+    if (!hasUserDismissedInstall() && !window.matchMedia('(display-mode: standalone)').matches) {
+        if (installPromptEl) {
+            installPromptEl.style.display = 'flex';
+            setTimeout(() => {
+                installPromptEl.classList.add('show');
+            }, 100);
+        }
+    }
+});
+
+const installBtn = document.getElementById('installBtn');
+if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'dismissed') {
+                saveInstallDismissed();
+            }
+            
+            deferredPrompt = null;
+            if (installPromptEl) {
+                installPromptEl.classList.remove('show');
+                setTimeout(() => {
+                    installPromptEl.style.display = 'none';
+                }, 500);
+            }
+        }
+    });
+}
+
+const dismissBtn = document.getElementById('dismissBtn');
+if (dismissBtn) {
+    dismissBtn.addEventListener('click', () => {
+        saveInstallDismissed();
+        if (installPromptEl) {
+            installPromptEl.classList.remove('show');
+            setTimeout(() => {
+                installPromptEl.style.display = 'none';
+            }, 500);
+        }
+    });
+}
+
+        // Load saved language preference
+        function loadSavedLanguage() {
+            const saved = localStorage.getItem('selectedLanguage');
+            if (saved) {
+                selectedLanguage = saved;
+            }
+        }
+
+        // Save language preference
+        function saveLanguage(language) {
+            localStorage.setItem('selectedLanguage', language);
+        }
+
+        // Use ID directly - no extraction needed
+        function getChannelId(id) {
+            return id;
+        }
+
+        // Load channels from JSON file
+        async function loadChannels() {
+            try {
+                const response = await fetch('channel_details.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load channels');
+                }
+                const data = await response.json();
+                allChannels = data;
+                filteredChannels = [...allChannels];
+                loadSavedLanguage();
+                populateLanguageDropdown();
+                filterChannels();
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                console.error('Error loading channels:', error);
+                document.getElementById('loading').innerHTML = 'Error loading channels. Please check if channel_details.json exists.';
+                document.getElementById('loading').style.color = '#ff0075';
+            }
+        }
+
+        // Get unique languages
+        function getLanguages() {
+            const languages = new Set(allChannels.map(ch => ch.language).filter(Boolean));
+            return ['All', ...Array.from(languages).sort()];
+        }
+
+        // Get unique categories
+        function getCategories() {
+            const categories = new Set(allChannels.map(ch => ch.channel).filter(Boolean));
+            return ['All', ...Array.from(categories).sort()];
+        }
+
+        // Populate language dropdown
+        function populateLanguageDropdown() {
+            const languages = getLanguages();
+            const select = document.getElementById('languageSelect');
+            select.innerHTML = languages.map(language => 
+                `<option value="${language}" ${language === selectedLanguage ? 'selected' : ''}>
+                    ${language === 'All' ? 'All Languages' : language}
+                </option>`
+            ).join('');
+
+            select.addEventListener('change', (e) => {
+                selectedLanguage = e.target.value;
+                saveLanguage(selectedLanguage);
+                filterChannels();
+            });
+        }
+
+        // Filter channels
+        function filterChannels() {
+            filteredChannels = allChannels.filter(channel => {
+                const matchesLanguage = selectedLanguage === 'All' || channel.language === selectedLanguage;
+                const matchesSearch = channel.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    (channel.language && channel.language.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                                    (channel.channel && channel.channel.toLowerCase().includes(searchQuery.toLowerCase()));
+                return matchesLanguage && matchesSearch;
+            });
+            renderChannels();
+        }
+
+        // Group channels by category
+        function groupByCategory(channels) {
+            return channels.reduce((acc, channel) => {
+                const category = channel.channel || 'Other';
+                if (!acc[category]) {
+                    acc[category] = [];
+                }
+                acc[category].push(channel);
+                return acc;
+            }, {});
+        }
+
+        // Render channels
+        function renderChannels() {
+            const container = document.getElementById('channelsContainer');
+            const noResults = document.getElementById('noResults');
+
+            if (filteredChannels.length === 0) {
+                container.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            const groupedChannels = groupByCategory(filteredChannels);
+
+            container.innerHTML = Object.keys(groupedChannels).sort().map(category => `
+                <div class="category-section">
+                    <h2 class="category-title">${category}</h2>
+                    <div class="channels-grid">
+                        ${groupedChannels[category].map(channel => `
+                            <div class="channel-card" data-id="${channel.id}">
+                                <img src="${channel.logo}" alt="${channel.title}" class="channel-logo" 
+									style="background-color: ${channel['logo-bg-color'] || '#ffffff'};" 
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect width=%22300%22 height=%22200%22 fill=%22%23333%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2220%22%3E${channel.title}%3C/text%3E%3C/svg%3E'">
+                                <div class="channel-info">
+                                    <div class="channel-title">${channel.title}</div>
+                                    <div class="channel-meta">
+                                        <span class="meta-badge">${channel.language || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            // Add click handlers
+            container.querySelectorAll('.channel-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const id = card.dataset.id;
+                    window.location.href = `player.html?id=${id}`;
+                });
+            });
+        }
+
+// Search functionality with URL sync
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchQuery = e.target.value;
+    filterChannels();
+    
+    // Update URL without page reload
+    updateSearchURL(searchQuery);
+});
+
+// Function to update URL
+function updateSearchURL(searchTerm) {
+    const url = new URL(window.location);
+    
+    if (searchTerm.trim()) {
+        // Add/update search parameter
+        url.searchParams.set('s', searchTerm);
+        document.title = `Search: ${searchTerm} - Live TV`;
+    } else {
+        // Remove search parameter when empty
+        url.searchParams.delete('s');
+        document.title = 'Live TV Streaming';
+    }
+    
+    // Update URL without reloading page
+    window.history.replaceState({}, '', url);
+}
+
+// Register Service Worker for PWA features
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+        .then(function(registration) {
+            console.log('✅ ServiceWorker registered for PWA:', registration.scope);
+            
+            // Check for updates
+            registration.update();
+            
+            // Handle updates
+            registration.addEventListener('updatefound', function() {
+                const newWorker = registration.installing;
+                console.log('New service worker found');
+                
+                newWorker.addEventListener('statechange', function() {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log('New service worker installed, will activate on next page load');
+                        // Optionally show update notification to user
+                    }
+                });
+            });
+        })
+        .catch(function(error) {
+            console.log('ServiceWorker registration failed:', error);
+        });
+    });
+}
+
+// ============================================
+// VOICE SEARCH - WITH SMART ERROR HANDLING
+// ============================================
+
+const micBtn = document.getElementById('micBtn');
+const searchInput = document.getElementById('searchInput');
+
+if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+    
+    let recognition = null;
+    let isListening = false;
+    let hasShownNetworkError = false;
+    
+    try {
+        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    } catch (e) {
+        console.error('Cannot create speech recognition:', e);
+        micBtn.style.display = 'none';
+    }
+    
+    if (recognition) {
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        
+        micBtn.addEventListener('click', async (e) => {
+            // If already disabled, show message
+            if (hasShownNetworkError) {
+                e.preventDefault();
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0,0,0,0.9);
+                    color: white;
+                    padding: 0.75rem 1.5rem;
+                    border-radius: 25px;
+                    font-size: 0.9rem;
+                    z-index: 10000;
+                `;
+                toast.textContent = '🚫 Voice search not available on this network';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+                return;
+            }
+            
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+            } catch (error) {
+                alert('🎤 Please allow microphone access');
+                return;
+            }
+            
+            // ALWAYS use English for voice search (easier for channel names)
+			recognition.lang = 'en-US';
+            
+            try {
+                recognition.start();
+                isListening = true;
+                micBtn.classList.add('listening');
+                searchInput.placeholder = '🎤 Listening...';
+            } catch (e) {
+                console.error('Start failed:', e);
+            }
+        });
+        
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            searchInput.value = transcript;
+            searchQuery = transcript;
+            filterChannels();
+            console.log('✅ Got:', transcript);
+        };
+        
+        recognition.onerror = (event) => {
+            if (event.error === 'network') {
+                if (!hasShownNetworkError) {
+                    hasShownNetworkError = true;
+                    
+                    searchInput.value = '';
+                    searchInput.placeholder = '⚠️ Voice search blocked - Use text search';
+                    
+                    micBtn.style.background = 'linear-gradient(135deg, #666, #999)';
+                    micBtn.style.cursor = 'not-allowed';
+                    micBtn.title = 'Voice search is not available on your network';
+                    
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 80px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: linear-gradient(135deg, #ff4444, #cc0000);
+                        color: white;
+                        padding: 1rem 2rem;
+                        border-radius: 10px;
+                        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                        z-index: 10000;
+                        animation: slideDown 0.3s ease;
+                        max-width: 90%;
+                        text-align: center;
+                    `;
+                    notification.innerHTML = `
+                        <strong>⚠️ Voice Search Blocked</strong><br>
+                        <small>Speech recognition is blocked on your network. Please use text search.</small>
+                    `;
+                    
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.animation = 'slideUp 0.3s ease';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 5000);
+                }
+                
+            } else if (event.error === 'not-allowed') {
+                alert('🎤 Microphone access denied. Please allow and reload.');
+            } else if (event.error === 'no-speech') {
+                console.log('No speech detected');
+            } else if (event.error !== 'aborted') {
+                console.log('Error:', event.error);
+            }
+        };
+        
+        recognition.onend = () => {
+            isListening = false;
+            micBtn.classList.remove('listening');
+            if (!hasShownNetworkError) {
+                searchInput.placeholder = 'Search channels or say channel name...';
+            }
+        };
+    }
+    
+} else {
+    micBtn.style.display = 'none';
+    console.log('Speech recognition not supported');
+}
+
+// ============================================
+// URL SEARCH PARAMETER HANDLING
+// ============================================
+
+function getSearchFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('s') || params.get('search') || '';
+}
+
+function handleURLSearch() {
+    const searchTerm = getSearchFromURL();
+    if (searchTerm) {
+        console.log('Search from URL:', searchTerm);
+        searchInput.value = searchTerm;
+        searchQuery = searchTerm;
+        
+        // Update page title
+        document.title = `Search: ${searchTerm} - Live TV`;
+        
+        // Filter channels with the search term
+        filterChannels();
+        
+        // Scroll to results
+        setTimeout(() => {
+            const container = document.getElementById('channelsContainer');
+            if (container) {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
+    }
+}
+
+// Call after channels are loaded
+const originalLoadChannels = loadChannels;
+loadChannels = async function() {
+    await originalLoadChannels();
+    handleURLSearch();
+};
+
+// Initialize app
+loadChannels();
+
+// ============================================
+// TV REMOTE / KEYBOARD NAVIGATION SUPPORT
+// ============================================
+
+let focusableElements = [];
+let currentFocusIndex = -1;
+
+function updateFocusableElements() {
+    // Get all focusable elements (buttons and channel cards)
+    focusableElements = Array.from(document.querySelectorAll(
+        'button, select, .channel-card, input'
+    )).filter(el => {
+        // Only include visible elements
+        return el.offsetParent !== null;
+    });
+}
+
+function focusElement(index) {
+    if (index < 0 || index >= focusableElements.length) return;
+    
+    const element = focusableElements[index];
+    element.focus();
+    
+    // Scroll into view if needed
+    element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest'
+    });
+    
+    currentFocusIndex = index;
+}
+
+function handleKeyboardNavigation(e) {
+    // Update focusable elements list
+    updateFocusableElements();
+    
+    if (focusableElements.length === 0) return;
+    
+    // If nothing is focused, focus the first element
+    if (currentFocusIndex === -1) {
+        currentFocusIndex = 0;
+        focusElement(0);
+        return;
+    }
+    
+    const currentElement = focusableElements[currentFocusIndex];
+    const isChannelCard = currentElement.classList.contains('channel-card');
+    
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (isChannelCard) {
+                // Move down by one row (approximate)
+                const cardsPerRow = Math.floor(window.innerWidth / 170);
+                const newIndex = Math.min(currentFocusIndex + cardsPerRow, focusableElements.length - 1);
+                focusElement(newIndex);
+            } else {
+                // Move to next element
+                focusElement(Math.min(currentFocusIndex + 1, focusableElements.length - 1));
+            }
+            break;
+            
+        case 'ArrowUp':
+            e.preventDefault();
+            if (isChannelCard) {
+                // Move up by one row
+                const cardsPerRow = Math.floor(window.innerWidth / 170);
+                const newIndex = Math.max(currentFocusIndex - cardsPerRow, 0);
+                focusElement(newIndex);
+            } else {
+                // Move to previous element
+                focusElement(Math.max(currentFocusIndex - 1, 0));
+            }
+            break;
+            
+        case 'ArrowRight':
+            e.preventDefault();
+            focusElement(Math.min(currentFocusIndex + 1, focusableElements.length - 1));
+            break;
+            
+        case 'ArrowLeft':
+            e.preventDefault();
+            focusElement(Math.max(currentFocusIndex - 1, 0));
+            break;
+            
+        case 'Enter':
+            e.preventDefault();
+            currentElement.click();
+            break;
+    }
+}
+
+// Add keyboard event listener
+document.addEventListener('keydown', handleKeyboardNavigation);
+
+// Update focusable elements when channels are rendered
+const originalRenderChannels = renderChannels;
+renderChannels = function() {
+    originalRenderChannels();
+    setTimeout(updateFocusableElements, 100);
+};
+
+// Add focus styling
+const style = document.createElement('style');
+style.textContent = `
+    button:focus,
+    select:focus,
+    input:focus,
+    .channel-card:focus {
+        outline: 3px solid #ff0075 !important;
+        outline-offset: 3px !important;
+        box-shadow: 0 0 0 6px rgba(255, 0, 117, 0.3) !important;
+    }
+    
+    .channel-card:focus {
+        transform: scale(1.05) !important;
+        z-index: 10;
+    }
+`;
+document.head.appendChild(style);
+
+// ============================================
+// SMART KEYBOARD HANDLING
+// ============================================
+
+document.addEventListener('keydown', (e) => {
+    const searchInput = document.getElementById('searchInput');
+    const activeElement = document.activeElement;
+    
+    // Get element type
+    const isInInput = activeElement.tagName === 'INPUT';
+    const isInSelect = activeElement.tagName === 'SELECT';
+    const isInTextarea = activeElement.tagName === 'TEXTAREA';
+    const isTypingAnywhere = isInInput || isInSelect || isInTextarea;
+    
+    // "/" key - Focus search (like YouTube, Reddit)
+    if (e.key === '/' && !isTypingAnywhere) {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+        return;
+    }
+    
+    // If in language selector, allow only arrow keys and Enter
+    if (isInSelect) {
+        // Allow: Arrow keys, Enter, Escape, Tab
+        const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', 'Tab'];
+        if (!allowedKeys.includes(e.key)) {
+            // Any other key - move to search
+            e.preventDefault();
+            searchInput.focus();
+            if (e.key.length === 1) {
+                searchInput.value = e.key;
+                searchQuery = e.key;
+                filterChannels();
+                updateSearchURL(e.key);
+            }
+        }
+        return;
+    }
+    
+    // If not typing anywhere and letter/number pressed - focus search
+    if (!isTypingAnywhere && e.key.length === 1 && /[a-zA-Z0-9\s]/.test(e.key)) {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.value = e.key;
+        searchQuery = e.key;
+        filterChannels();
+        updateSearchURL(e.key);
+        return;
+    }
+    
+    // Escape key handling
+    if (e.key === 'Escape') {
+        if (isInInput && activeElement === searchInput) {
+            // Clear search
+            searchInput.value = '';
+            searchQuery = '';
+            filterChannels();
+            updateSearchURL('');
+            searchInput.blur();
+        } else if (isInSelect) {
+            // Close dropdown
+            activeElement.blur();
+        }
+    }
+});
+
+// Click on language selector - prevent keyboard hijacking
+document.getElementById('languageSelect').addEventListener('focus', (e) => {
+    console.log('Language selector focused');
+});
+
+// When language selector changes, move focus back to search
+document.getElementById('languageSelect').addEventListener('change', (e) => {
+    // After selection, blur the select so typing goes to search
+    setTimeout(() => {
+        e.target.blur();
+    }, 100);
+});
+
+    </script>
+</body>
+</html>

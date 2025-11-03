@@ -7,6 +7,11 @@
     <title>Live TV Player</title>
 	
 	<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+	
+	<!-- Add these lines -->
+	<script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/dash-shaka-playback@3.6.3/dist/dash-shaka-playback.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/level-selector@0.2.0/dist/level-selector.min.js"></script>
     
     <!-- JW Player -->
     <script src="https://ssl.p.jwpcdn.com/player/v/8.38.7/jwplayer.js"></script>
@@ -469,6 +474,26 @@
                 font-size: 1.1rem;
             }
         }
+		
+/* Clappr Player Styling */
+.clappr-media-control[data-media-control] button {
+    color: #ff0075 !important;
+}
+
+/* Force Clappr video to fill/stretch */
+[data-html5-video] video {
+    object-fit: fill !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+#clappr-container video {
+    object-fit: fill !important;
+}
+
+.clappr-container video {
+    object-fit: fill !important;
+}		
     </style>
 </head>
 <body>
@@ -556,6 +581,8 @@
         let isMuted = false;
 		let retryInterval = null; // For auto-retry timer
 		let currentStreamData = null; // Store current stream data
+		let clapprPlayer = null; 
+		let isUsingClappr = false; 
 
         // Get URL parameters
         function getUrlParams() {
@@ -607,6 +634,98 @@
                 throw error;
             }
         }
+		
+// Parse stream URL for DRM parameters
+function parseStreamUrl(url) {
+    const urlObj = new URL(url);
+    const params = new URLSearchParams(urlObj.search);
+    
+    return {
+        isMPD: url.includes('.mpd'),
+        isM3U8: url.includes('.m3u8'),
+        keyId: params.get('keyId'),
+        key: params.get('key'),
+        licenseUrl: params.get('licenseUrl'),
+        baseUrl: url.split('?')[0]
+    };
+}
+
+// Initialize Clappr Player for advanced DRM
+function initializeClappr(streamData, urlParams) {
+    const wrapper = document.getElementById('jwplayer-wrapper');
+    wrapper.innerHTML = '<div id="clappr-container" style="width:100%;height:100%;"></div>';
+    
+    const plugins = [LevelSelector];
+    const shakaSettings = {};
+    
+    // Configure DRM
+    if (urlParams.isMPD) {
+        plugins.push(DashShakaPlayback);
+        
+        if (urlParams.licenseUrl) {
+            shakaSettings.drm = {
+                servers: { 'com.widevine.alpha': urlParams.licenseUrl }
+            };
+        } else if (urlParams.keyId && urlParams.key) {
+            shakaSettings.drm = {
+                clearKeys: { [urlParams.keyId]: urlParams.key }
+            };
+        }
+    }
+    
+    clapprPlayer = new Clappr.Player({
+        parentId: "#clappr-container",
+        source: streamData.streamUrl,
+        autoPlay: true,
+        mute: false,
+        width: "100%",
+        height: "100%",
+        plugins: plugins,
+        shakaConfiguration: shakaSettings,
+        levelSelectorConfig: { title: 'Quality' },
+        mediacontrol: { seekbar: "#ff0075", buttons: "#ff0075" },
+        playback: { playInline: true, recycleVideo: true },
+		stretch: true
+    });
+    
+    isUsingClappr = true;
+    setupClapprEvents();
+    
+    // Hide quality button for Clappr (has built-in quality selector)
+    const qualityBtn = document.getElementById('qualityBtn');
+    if (qualityBtn) {
+        qualityBtn.style.opacity = '0.3';
+        qualityBtn.style.pointerEvents = 'none';
+    }
+    
+    hideLoading();
+}
+
+// Setup Clappr player events
+function setupClapprEvents() {
+    clapprPlayer.on(Clappr.Events.PLAYER_PLAY, function() {
+        isPlaying = true;
+        document.getElementById('playIcon').style.display = 'none';
+        document.getElementById('pauseIcon').style.display = 'block';
+        hideLoading();
+        hideBuffering();
+    });
+    
+    clapprPlayer.on(Clappr.Events.PLAYER_PAUSE, function() {
+        isPlaying = false;
+        document.getElementById('playIcon').style.display = 'block';
+        document.getElementById('pauseIcon').style.display = 'none';
+    });
+    
+    clapprPlayer.on(Clappr.Events.PLAYER_TIMEUPDATE, function() {
+        hideBuffering();
+    });
+    
+    clapprPlayer.on(Clappr.Events.PLAYER_ERROR, function(error) {
+        console.error('Clappr error:', error);
+        showError('Playback error: Unable to load stream');
+    });
+}		
 		
 // Use native HLS for mobile compatibility
 function initializeNativeHLS(streamData) {
@@ -702,7 +821,7 @@ function initializeNativeHLS(streamData) {
 function initializePlayer(streamData) {
     const config = {
         file: streamData.streamUrl,
-        type: streamData.isDRM ? "dash" : "hls",
+        type: streamData.streamType || (streamData.isDRM ? "dash" : "hls"),
         autostart: true,
         controls: false,
         width: "100%",
@@ -871,28 +990,35 @@ async function loadChannel(channelId) {
 
         let streamData;
 
-        // ✅ NEW: Check if direct stream URL exists in JSON
-        if (currentChannel.direct_stream) {
-            console.log('Using direct stream from JSON:', currentChannel.direct_stream);
-            
-            // Determine if it's DRM based on title (or you can add a "drm" field)
-            const isDRM = currentChannel.title.includes("*");
-            
-            streamData = {
-                isDRM: isDRM,
-                streamUrl: currentChannel.direct_stream,
-                licenseUrl: isDRM ? currentChannel.license_url : null, // Optional DRM license
-                title: currentChannel.title
-            };
-			
-			// Store stream data globally for retry mechanism
-			currentStreamData = streamData;
-
-			// NEW: Setup auto-retry if "retry": "yes" in channel data
-			if (currentChannel.retry === "yes") {
-				setupAutoRetry();
-			}
-        } else {
+// In the direct_stream section of loadChannel():
+if (currentChannel.direct_stream) {
+    console.log('Using direct stream from JSON:', currentChannel.direct_stream);
+    
+    const streamUrl = currentChannel.direct_stream;
+    const urlParams = parseStreamUrl(streamUrl); // Add this line
+    const isDRM = currentChannel.title.includes("*");
+    
+    streamData = {
+        isDRM: isDRM || urlParams.keyId || urlParams.licenseUrl, // Modified
+        streamUrl: streamUrl,
+        licenseUrl: isDRM ? currentChannel.license_url : null,
+        title: currentChannel.title,
+        streamType: urlParams.isMPD ? "dash" : "hls" // Modified
+    };
+    
+    currentStreamData = streamData;
+    
+    if (currentChannel.retry === "yes") {
+        setupAutoRetry();
+    }
+    
+    // NEW: Use Clappr for streams with keyId/key parameters
+    if (urlParams.keyId && urlParams.key) {
+        console.log('Using Clappr for clearKey DRM');
+        initializeClappr(streamData, urlParams);
+        return; // Exit early
+    }
+} else {
             // No direct stream - fetch from API
             console.log('No direct stream found, fetching from API for id:', currentChannel.id);
             streamData = await fetchStreamDetails(currentChannel.id);
@@ -1039,12 +1165,29 @@ function goBack() {
         clearInterval(retryInterval);
         retryInterval = null;
     }
+	
+    // Cleanup Clappr
+    if (clapprPlayer) {
+        clapprPlayer.destroy();
+        clapprPlayer = null;
+        isUsingClappr = false;
+    }	
     
     if (player) player.remove();
     window.history.back();
 }
 
 function togglePlayPause() {
+    // Check for Clappr
+    if (isUsingClappr && clapprPlayer) {
+        if (clapprPlayer.isPlaying()) {
+            clapprPlayer.pause();
+        } else {
+            clapprPlayer.play();
+        }
+        return;
+    }
+    
     // Check if using native video element (HLS.js)
     const nativeVideo = document.getElementById('native-video');
     if (nativeVideo) {
@@ -1067,6 +1210,16 @@ function togglePlayPause() {
 }
 
 function toggleMute() {
+
+    // Check for Clappr
+    if (isUsingClappr && clapprPlayer) {
+        const isMuted = clapprPlayer.getVolume() === 0;
+        clapprPlayer.setVolume(isMuted ? 100 : 0);
+        document.getElementById('volumeOnIcon').style.display = isMuted ? 'block' : 'none';
+        document.getElementById('volumeOffIcon').style.display = isMuted ? 'none' : 'block';
+        return;
+    }
+	
     // Check if using native video element (HLS.js)
     const nativeVideo = document.getElementById('native-video');
     if (nativeVideo) {
@@ -1147,7 +1300,7 @@ function toggleFullscreen() {
             showControls();
             hideControlsTimeout = setTimeout(() => {
                 hideControls();
-            }, 3000);
+            }, 1500);
         }
 
         // Event Listeners
@@ -1184,21 +1337,28 @@ let isTouchDevice = 'ontouchstart' in window;
 
 // For TOUCH devices (mobile/tablet)
 if (isTouchDevice) {
-    document.getElementById('jwplayer-wrapper').addEventListener('touchend', (e) => {
-		// No need to check for buttons anymore since we're only on video area
-    
-		const currentTime = new Date().getTime();
-		const tapLength = currentTime - lastTap;
-    
-		if (tapLength < 300 && tapLength > 0) {
-			// DOUBLE TAP detected
-			clearTimeout(tapTimeout);
-			e.preventDefault();
-			console.log('✅ Double tap - entering fullscreen');
-			toggleFullscreen();
-			lastTap = 0;
-		} else {
-            // SINGLE TAP - wait to confirm
+    // Use playerContainer instead of jwplayer-wrapper for universal coverage
+    document.getElementById('playerContainer').addEventListener('touchend', (e) => {
+        // Ignore if clicking on controls/buttons
+        if (e.target.closest('.controls-overlay') || 
+            e.target.closest('.top-bar') || 
+            e.target.closest('button') ||
+            e.target.closest('[data-media-control]')) {  // Add Clappr controls check
+            return;
+        }
+        
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        
+        if (tapLength < 300 && tapLength > 0) {
+            // DOUBLE TAP detected
+            clearTimeout(tapTimeout);
+            e.preventDefault();
+            console.log('✅ Double tap - entering fullscreen');
+            toggleFullscreen();
+            lastTap = 0;
+        } else {
+            // SINGLE TAP - toggle controls
             lastTap = currentTime;
             clearTimeout(tapTimeout);
             
@@ -1210,20 +1370,17 @@ if (isTouchDevice) {
                 const isHidden = controlsOverlay.classList.contains('hidden');
                 
                 if (isHidden) {
-                    // SHOW controls
                     controlsOverlay.classList.remove('hidden');
                     topBar.classList.remove('hidden');
                     document.body.classList.remove('hide-cursor');
                     
-                    // Auto-hide after 3 seconds
                     clearTimeout(hideControlsTimeout);
                     hideControlsTimeout = setTimeout(() => {
                         controlsOverlay.classList.add('hidden');
                         topBar.classList.add('hidden');
                         document.body.classList.add('hide-cursor');
-                    }, 3000);
+                    }, 1500);
                 } else {
-                    // HIDE controls
                     controlsOverlay.classList.add('hidden');
                     topBar.classList.add('hidden');
                     document.body.classList.add('hide-cursor');
@@ -1233,26 +1390,31 @@ if (isTouchDevice) {
         }
     });
     
-    // Show controls on touch move (dragging finger)
-    document.getElementById('jwplayer-wrapper').addEventListener('touchmove', (e) => {
-		// Remove the if check for controls
-    
-		const controlsOverlay = document.getElementById('controlsOverlay');
-		const topBar = document.getElementById('topBar');
-    
-		if (controlsOverlay.classList.contains('hidden')) {
-			controlsOverlay.classList.remove('hidden');
-			topBar.classList.remove('hidden');
-			document.body.classList.remove('hide-cursor');
-		}
-    
-		clearTimeout(hideControlsTimeout);
-		hideControlsTimeout = setTimeout(() => {
-			controlsOverlay.classList.add('hidden');
-			topBar.classList.add('hidden');
-			document.body.classList.add('hide-cursor');
-		}, 3000);
-	});
+    // Touch move for showing controls
+    document.getElementById('playerContainer').addEventListener('touchmove', (e) => {
+        // Ignore if on controls
+        if (e.target.closest('.controls-overlay') || 
+            e.target.closest('.top-bar') ||
+            e.target.closest('[data-media-control]')) {
+            return;
+        }
+        
+        const controlsOverlay = document.getElementById('controlsOverlay');
+        const topBar = document.getElementById('topBar');
+        
+        if (controlsOverlay.classList.contains('hidden')) {
+            controlsOverlay.classList.remove('hidden');
+            topBar.classList.remove('hidden');
+            document.body.classList.remove('hide-cursor');
+        }
+        
+        clearTimeout(hideControlsTimeout);
+        hideControlsTimeout = setTimeout(() => {
+            controlsOverlay.classList.add('hidden');
+            topBar.classList.add('hidden');
+            document.body.classList.add('hide-cursor');
+        }, 1500);
+    });
 }
 
 // For DESKTOP (mouse)
@@ -1271,7 +1433,7 @@ if (!isTouchDevice) {
             controlsOverlay.classList.add('hidden');
             topBar.classList.add('hidden');
             document.body.classList.add('hide-cursor');
-        }, 3000);
+        }, 1500);
     });
     
     // Single click toggles controls
@@ -1296,7 +1458,7 @@ if (!isTouchDevice) {
                 controlsOverlay.classList.add('hidden');
                 topBar.classList.add('hidden');
                 document.body.classList.add('hide-cursor');
-            }, 3000);
+            }, 1500);
         } else {
             controlsOverlay.classList.add('hidden');
             topBar.classList.add('hidden');
@@ -1372,7 +1534,7 @@ if (!isTouchDevice) {
         showControls();
         hideControlsTimeout = setTimeout(() => {
             hideControls();
-        }, 3000);
+        }, 1500);
 		
 // Register Service Worker for PWA features
 if ('serviceWorker' in navigator) {
