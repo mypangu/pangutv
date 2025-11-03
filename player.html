@@ -1105,25 +1105,20 @@ let isTouchDevice = 'ontouchstart' in window;
 
 // For TOUCH devices (mobile/tablet)
 if (isTouchDevice) {
-    document.getElementById('playerContainer').addEventListener('touchend', (e) => {
-        // Ignore if tapping on controls or buttons
-        if (e.target.closest('.controls-overlay') || 
-            e.target.closest('.top-bar') || 
-            e.target.closest('button')) {
-            return;
-        }
-        
-        const currentTime = new Date().getTime();
-        const tapLength = currentTime - lastTap;
-        
-        if (tapLength < 300 && tapLength > 0) {
-            // DOUBLE TAP detected
-            clearTimeout(tapTimeout);
-            e.preventDefault();
-            console.log('✅ Double tap - entering fullscreen');
-            toggleFullscreen();
-            lastTap = 0;
-        } else {
+    document.getElementById('jwplayer-wrapper').addEventListener('touchend', (e) => {
+		// No need to check for buttons anymore since we're only on video area
+    
+		const currentTime = new Date().getTime();
+		const tapLength = currentTime - lastTap;
+    
+		if (tapLength < 300 && tapLength > 0) {
+			// DOUBLE TAP detected
+			clearTimeout(tapTimeout);
+			e.preventDefault();
+			console.log('✅ Double tap - entering fullscreen');
+			toggleFullscreen();
+			lastTap = 0;
+		} else {
             // SINGLE TAP - wait to confirm
             lastTap = currentTime;
             clearTimeout(tapTimeout);
@@ -1160,27 +1155,25 @@ if (isTouchDevice) {
     });
     
     // Show controls on touch move (dragging finger)
-    document.getElementById('playerContainer').addEventListener('touchmove', (e) => {
-        if (e.target.closest('.controls-overlay') || e.target.closest('.top-bar')) {
-            return;
-        }
-        
-        const controlsOverlay = document.getElementById('controlsOverlay');
-        const topBar = document.getElementById('topBar');
-        
-        if (controlsOverlay.classList.contains('hidden')) {
-            controlsOverlay.classList.remove('hidden');
-            topBar.classList.remove('hidden');
-            document.body.classList.remove('hide-cursor');
-        }
-        
-        clearTimeout(hideControlsTimeout);
-        hideControlsTimeout = setTimeout(() => {
-            controlsOverlay.classList.add('hidden');
-            topBar.classList.add('hidden');
-            document.body.classList.add('hide-cursor');
-        }, 3000);
-    });
+    document.getElementById('jwplayer-wrapper').addEventListener('touchmove', (e) => {
+		// Remove the if check for controls
+    
+		const controlsOverlay = document.getElementById('controlsOverlay');
+		const topBar = document.getElementById('topBar');
+    
+		if (controlsOverlay.classList.contains('hidden')) {
+			controlsOverlay.classList.remove('hidden');
+			topBar.classList.remove('hidden');
+			document.body.classList.remove('hide-cursor');
+		}
+    
+		clearTimeout(hideControlsTimeout);
+		hideControlsTimeout = setTimeout(() => {
+			controlsOverlay.classList.add('hidden');
+			topBar.classList.add('hidden');
+			document.body.classList.add('hide-cursor');
+		}, 3000);
+	});
 }
 
 // For DESKTOP (mouse)
