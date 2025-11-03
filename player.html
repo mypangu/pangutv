@@ -1115,30 +1115,44 @@ document.getElementById('playerContainer').addEventListener('touchend', (e) => {
     const currentTime = new Date().getTime();
     const tapLength = currentTime - lastTap;
     
-    // Clear any pending single-tap
-    clearTimeout(tapTimeout);
-    
     if (tapLength < 300 && tapLength > 0) {
         // Double tap detected
         e.preventDefault();
+        clearTimeout(tapTimeout); // Cancel single tap action
         console.log('Double tap detected - entering fullscreen');
         toggleFullscreen();
-        lastTap = 0; // Reset to prevent triple-tap issues
+        lastTap = 0; // Reset
     } else {
-        // Single tap - wait to see if another tap comes
+        // Potential single tap - start timer
         lastTap = currentTime;
+        
+        // Don't process immediately, wait to see if double tap comes
+        clearTimeout(tapTimeout);
         tapTimeout = setTimeout(() => {
-            console.log('Single tap detected - toggling controls');
-            // Single tap confirmed - toggle controls
+            console.log('Single tap confirmed - toggling controls');
+            
             const controlsOverlay = document.getElementById('controlsOverlay');
+            const topBar = document.getElementById('topBar');
             const controlsHidden = controlsOverlay.classList.contains('hidden');
             
             if (controlsHidden) {
+                // Show controls
                 console.log('Showing controls');
-                resetHideControlsTimer();
+                controlsOverlay.classList.remove('hidden');
+                topBar.classList.remove('hidden');
+                document.body.classList.remove('hide-cursor');
+                
+                // Auto-hide after 3 seconds
+                clearTimeout(hideControlsTimeout);
+                hideControlsTimeout = setTimeout(() => {
+                    hideControls();
+                }, 1500);
             } else {
+                // Hide controls immediately
                 console.log('Hiding controls');
-                hideControls();
+                controlsOverlay.classList.add('hidden');
+                topBar.classList.add('hidden');
+                document.body.classList.add('hide-cursor');
                 clearTimeout(hideControlsTimeout);
             }
         }, 300);
