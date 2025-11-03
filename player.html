@@ -1098,17 +1098,16 @@ function toggleFullscreen() {
             }
         });
 
-        // Mouse/touch movement detection
-        document.addEventListener('mousemove', resetHideControlsTimer);
-        document.addEventListener('touchstart', resetHideControlsTimer);
-        document.addEventListener('touchmove', resetHideControlsTimer);
+// Mouse/touch movement detection
+document.addEventListener('mousemove', resetHideControlsTimer);
+document.addEventListener('touchmove', resetHideControlsTimer);
 
 // Double-tap and click handling
 let lastTap = 0;
 let tapTimeout = null;
 
 document.getElementById('playerContainer').addEventListener('touchend', (e) => {
-    // Ignore if clicking on controls
+    // Ignore if tapping on controls
     if (e.target.closest('.controls-overlay') || e.target.closest('.top-bar')) {
         return;
     }
@@ -1129,11 +1128,16 @@ document.getElementById('playerContainer').addEventListener('touchend', (e) => {
         // Single tap - wait to see if another tap comes
         lastTap = currentTime;
         tapTimeout = setTimeout(() => {
+            console.log('Single tap detected - toggling controls');
             // Single tap confirmed - toggle controls
-            const controlsHidden = document.getElementById('controlsOverlay').classList.contains('hidden');
+            const controlsOverlay = document.getElementById('controlsOverlay');
+            const controlsHidden = controlsOverlay.classList.contains('hidden');
+            
             if (controlsHidden) {
+                console.log('Showing controls');
                 resetHideControlsTimer();
             } else {
+                console.log('Hiding controls');
                 hideControls();
                 clearTimeout(hideControlsTimeout);
             }
