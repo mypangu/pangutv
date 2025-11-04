@@ -643,11 +643,22 @@ function parseStreamUrl(url) {
     const urlObj = new URL(url);
     const params = new URLSearchParams(urlObj.search);
     
+    const keyId = params.get('keyId');
+    const key = params.get('key');
+    
+    // Build clearKeys object if both keyId and key exist
+    let clearKeys = null;
+    if (keyId && key) {
+        clearKeys = {};
+        clearKeys[keyId] = key;
+    }
+    
     return {
         isMPD: url.includes('.mpd'),
         isM3U8: url.includes('.m3u8'),
-        keyId: params.get('keyId'),
-        key: params.get('key'),
+        keyId: keyId,
+        key: key,
+        clearKeys: clearKeys,  // NEW: Add this
         licenseUrl: params.get('licenseUrl'),
         baseUrl: url.split('?')[0]
     };
@@ -669,9 +680,10 @@ function initializeClappr(streamData, urlParams) {
             shakaSettings.drm = {
                 servers: { 'com.widevine.alpha': urlParams.licenseUrl }
             };
-        } else if (urlParams.keyId && urlParams.key) {
+        } else if (urlParams.clearKeys) {
+            // Use the clearKeys object directly
             shakaSettings.drm = {
-                clearKeys: { [urlParams.keyId]: urlParams.key }
+                clearKeys: urlParams.clearKeys
             };
         }
     }
@@ -687,8 +699,12 @@ function initializeClappr(streamData, urlParams) {
         shakaConfiguration: shakaSettings,
         levelSelectorConfig: { title: 'Quality' },
         mediacontrol: { seekbar: "#ff0075", buttons: "#ff0075" },
-        playback: { playInline: true, recycleVideo: true },
-		stretch: true
+        playback: { 
+            playInline: true, 
+            recycleVideo: true,
+            shakaConfiguration: shakaSettings  // NEW: Add this
+        },
+        stretch: true
     });
     
     isUsingClappr = true;
@@ -1014,12 +1030,12 @@ if (currentChannel.direct_stream) {
         setupAutoRetry();
     }
     
-    // NEW: Use Clappr for streams with keyId/key parameters
-    if (urlParams.keyId && urlParams.key) {
-        console.log('Using Clappr for clearKey DRM');
-        initializeClappr(streamData, urlParams);
-        return; // Exit early
-    }
+// Use Clappr for streams with clearKeys
+if (urlParams.clearKeys) {
+    console.log('Using Clappr for clearKey DRM');
+    initializeClappr(streamData, urlParams);
+    return; // Exit early
+}
 } else {
             // No direct stream - fetch from API
             console.log('No direct stream found, fetching from API for id:', currentChannel.id);

@@ -293,7 +293,8 @@
         "title": "Adithya TV",
         "channel": "Entertainment",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Adithya_TV.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Adithya_TV.png",
+		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream/4d0eb3cde30247ada4ade679fdfbaf86/AdithyaTVB_IN_index.mpd?keyId=d674a1a7f43641a29bd8867d87c7259a&key=812f55dcde68619fc6ad95951b241d2c"
     },
     {
         "platform": "iframe",
@@ -814,7 +815,8 @@
         "title": "Chutti TV",
         "channel": "Kids",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Chutti_TV.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Chutti_TV.png",
+		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream/e3eccb3f250a4ca8826e42914b2322a6/ChuttiTV_IN_index.mpd?keyId=05da38a46fb7403088f41434e44de980&key=488046139a1e1d65323cfe4bb1b30b7b"
     },
     {
         "platform": "iframe",
@@ -1985,7 +1987,8 @@
         "title": "KTV HD",
         "channel": "Movies",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/KTV_HD.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/KTV_HD.png",
+		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream/61477b4c8d8d45d5a49e044cc1dffc60/KTVHDB_IN_index.mpd?keyId=351e547391bb45cbac66d2cb9ec0c294&key=3bd646753f4903eee3b404646c7819d3"
     },
     {
         "platform": "iframe",
@@ -7276,7 +7279,8 @@
         "title": "Sun Life",
         "channel": "Movies",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_Life.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_Life.png",
+		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream/6b79451f54284b3fb680fd717ee008dc/SunLifeB_IN_index.mpd?keyId=81546df3f41c4a6dbc9a4efc7f2fb626&key=3928505f4054cf1fa935276fdbe40992"
     },
     {
         "platform": "iframe",
@@ -7492,7 +7496,8 @@
         "title": "Sun Music HD",
         "channel": "Music",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_Music_HD.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_Music_HD.png",
+		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream/d434796d90fa4dc9b7ecfacedbe683f1/SunMusicHDB_IN_index.mpd?keyId=b5a2c6d13b9748de9ceebc0a8adc8af3&key=e806fec1bf1c8a844216118c94bad020"
     },
     {
         "platform": "iframe",
@@ -8148,7 +8153,8 @@
         "title": "Sun TV HD",
         "channel": "Entertainment",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_TV_HD.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_TV_HD.png",
+		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream2/19ee29194c4d4fc286c3e697362e60cd/SunTVHDB_IN_index.mpd?keyId=3891557f1cb14dedb7545bf52499d748&key=fb662f742e5f5e0c61a7c1c66d2b019a"
     },
     {
         "platform": "iframe",
