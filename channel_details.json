@@ -2829,7 +2829,8 @@
         "title": "NTC TV",
         "channel": "Entertainment",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/ntvtamil.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/ntvtamil.png",
+		"direct_stream": "https://galaxyott.live//hls/ntv.m3u8"
     },
     {
         "platform": "iframe",
@@ -7210,7 +7211,8 @@
         "title": "Subin TV",
         "channel": "Entertainment",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/subintvtamil.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/subintvtamil.png",
+		"direct_stream": "https://stream.galaxyott.live/live/subintv/tracks-v1a1/mono.m3u8"
     },
     {
         "platform": "iframe",
@@ -8330,7 +8332,8 @@
         "title": "Suriya TV",
         "channel": "Entertainment",
         "language": "Tamil",
-        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/suryatvtamil.png"
+        "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/suryatvtamil.png",
+		"direct_stream": "https://galaxyott.live/hls//suryatv.m3u8"
     },
     {
         "platform": "iframe",
@@ -9718,5 +9721,347 @@
         "language": "English",
         "logo": "https://oxolive.com/wp-content/uploads/2025/10/natgeous-1-150x150.webp",
 		"direct_stream": "https://v4-pan-n79-cdn-01.live.cdn.cgates.lt/live/dash/561901/index.mpd?&keyId=6d647aff767c453daa5fb54a44c783c6&key=2f971e6a1cc58e7085afc761a3f13162"
-    }
+    },
+    {
+        "id": "10027",
+        "title": "Gem TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-25-2025-05_20_49-PM-1-150x150.png",
+		"direct_stream": "https://gemtv.circle7stream.com/gem/fcce47a8559e30755582c396ce7fce9e.sdp/playlist.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10028",
+        "title": "Imai TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-23-2025-06_57_17-AM-1-150x150.png",
+		"direct_stream": "https://live20.bozztv.com/akamaissh101/ssh101/imaitv/playlist.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10029",
+        "title": "Jayam TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-19-2025-04_55_57-PM-1-150x150.png",
+		"direct_stream": "https://ipcloud.live/jayamtv/jayamtvhd/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10030",
+        "title": "Jeyam Television",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-14-2025-05_20_15-PM-1-150x150.png",
+		"direct_stream": "https://jeyamtv.livebox.co.in/JeyamTelevisionhls/JeyamTelevision.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10031",
+        "title": "KCTV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-10-2025-04_40_29-PM-1-150x150.png",
+		"direct_stream": "https://rtmp.bmlive.net/bms/kctv/stream.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10032",
+        "title": "Kumari TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-8-2025-08_48_35-AM-1-150x150.png",
+		"direct_stream": "https://rtmp.applelive.in/gvkumaritv/gvkumaritv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10033",
+        "title": "MCN HD",
+        "channel": "Movies",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-8-2025-09_03_09-AM-1-150x150.png",
+		"direct_stream": "https://play.applelive.in/mcntv/mcntv.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10034",
+        "title": "MS Mathan TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-17-2025-07_00_11-AM-1-150x150.png",
+		"direct_stream": "https://anywhere.pwisetthon.com/http://madhantv.phoenixcreations.online/madhantv/madhantv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10035",
+        "title": "NTN TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-8-2025-09_00_39-AM-1-150x150.png",
+		"direct_stream": "https://live.skystream.in/live/ntntv/index.m3u8?hls_ctx=1314owa2",
+		"isLocal": "true"
+    },
+    {
+        "id": "10036",
+        "title": "NTC HD",
+        "channel": "Movies",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/04/ChatGPT-Image-Apr-28-2025-03_15_03-PM-150x150.png",
+		"direct_stream": "https://galaxyott.live//hls/ntv.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10037",
+        "title": "Oli TV HD",
+        "channel": "Movies",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-8-2025-09_07_04-AM-1-150x150.png",
+		"direct_stream": "https://live.olidigital.in/olitv/olitv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10038",
+        "title": "Riya TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-24-2025-03_37_37-PM-1-150x150.png",
+		"direct_stream": "https://play.applelive.in/riyatv/riyatv.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10039",
+        "title": "Sakthi TV HD",
+        "channel": "Movies",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-8-2025-08_43_36-AM-1-150x150.png",
+		"direct_stream": "https://live.sscloud7.in/live/sakthitv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10040",
+        "title": "SJ Surya",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-24-2025-10_30_06-AM-1-150x150.png",
+		"direct_stream": "https://ipcloud.live/nellaitv/suriyatv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10041",
+        "title": "SK TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-15-2025-05_38_14-PM-1-150x150.png",
+		"direct_stream": "https://stream.galaxyott.live/live/sktv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10042",
+        "title": "SMCV HD",
+        "channel": "Movies",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-14-2025-05_05_02-PM-1-150x150.png",
+		"direct_stream": "https://singamcloud.in/smcvtv/smcvtv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10043",
+        "title": "SS TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-25-2025-08_51_40-AM-1-150x150.png",
+		"direct_stream": "https://mumbai-edge.smartplaytv.in/sstvTamil/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10044",
+        "title": "SS TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-19-2025-04_39_49-PM-1-150x150.png",
+		"direct_stream": "https://server.sscloud7.in/live/sshd/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10045",
+        "title": "TDN HD",
+        "channel": "Movies",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-30-2025-08_31_10-AM-1-150x150.png",
+		"direct_stream": "https://live.maxtn.in/tdn/tdn/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10046",
+        "title": "Vani TV HD",
+        "channel": "Movies",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-12-2025-08_00_47-PM-1-150x150.png",
+		"direct_stream": "https://live.sscloud7.in/live/vanitvhd/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10047",
+        "title": "Yet TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/08/ChatGPT-Image-Aug-21-2025-09_57_13-AM-1-150x150.png",
+		"direct_stream": "https://live.yettelevision.com:5443/LiveApp/streams/yettv.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10048",
+        "title": "Udhayam TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://img.imageride.net/images/2025/10/20/udhayam-tv.jpg",
+		"direct_stream": "https://ipcloud.live/udhayamtv/live/tracks-v1a1/mono.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10049",
+        "title": "Phoenix TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-23-2025-07_21_33-AM-1-150x150.png",
+		"direct_stream": "https://anywhere.pwisetthon.com/http://phoenix.phoenixcreations.online/phoenix/phoenix/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10050",
+        "title": "TOP TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-12-2025-09_38_53-PM-1-150x150.png",
+		"direct_stream": "https://anywhere.pwisetthon.com/http://toptv.phoenixcreations.online/toptv/toptv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10051",
+        "title": "RK TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-10-2025-09_21_26-AM-1-150x150.png",
+		"direct_stream": "https://anywhere.pwisetthon.com/http://rktv.phoenixcreations.online/rktv/rktv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10052",
+        "title": "Surya HD Digital",
+        "channel": "Movies",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-12-2025-09_07_22-PM-1-150x150.png",
+		"direct_stream": "https://live.sscloud7.in/live/suryatv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10053",
+        "title": "Darshan TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-22-2025-03_45_32-PM-1-150x150.png",
+		"direct_stream": "https://galaxyott.live/hls/dharshantv.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10054",
+        "title": "Sachin TV Music",
+        "channel": "Music",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/08/ChatGPT-Image-Aug-21-2025-10_13_07-AM-1-150x150.png",
+		"direct_stream": "https://ipcloud.live/sachintv/musichd/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10055",
+        "title": "Aadvik TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/08/ChatGPT-Image-Aug-21-2025-10_09_01-AM-1-150x150.png",
+		"direct_stream": "https://ipcloud.live/sachintv/aadviktv/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10056",
+        "title": "Maruthi TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-11-2025-09_26_35-PM-1-150x150.png",
+		"direct_stream": "https://stream.onecloudlive.in/maruthitv/maruthitvhd/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10057",
+        "title": "3 Star TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/08/ChatGPT-Image-Aug-21-2025-09_59_49-AM-1-150x150.png",
+		"direct_stream": "https://stream.onecloudlive.in/threestartv/threestarhd/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10058",
+        "title": "Velicham TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2024/01/ChatGPT-Image-Apr-10-2025-04_48_00-PM-150x150.png",
+		"direct_stream": "https://cdn.smartstream.video/smartstream-us/velichamtv/velichamtv/playlist.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10059",
+        "title": "Kumaran TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/08/ChatGPT-Image-Aug-21-2025-09_31_38-AM-1-150x150.png",
+		"direct_stream": "https://stream.rojatv.cloud/kumarantv/gobi/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10060",
+        "title": "Mathi TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/08/ChatGPT-Image-Aug-21-2025-09_26_24-AM-1-150x150.png",
+		"direct_stream": "https://notvstream.in/mathitv/mathitv.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10061",
+        "title": "Rock TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-12-2025-08_40_49-PM-1-150x150.png",
+		"direct_stream": "https://apis.avmediawork.in/tvhls/rocktv.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10062",
+        "title": "RJ Tamil TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/08/ChatGPT-Image-Aug-27-2025-10_25_51-PM-1-150x150.png",
+		"direct_stream": "https://ipcloud.live/rjtamiltv/rjtamil/index.m3u8",
+		"isLocal": "true"
+    },
+    {
+        "id": "10063",
+        "title": "Rio TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/09/ChatGPT-Image-Sep-11-2025-09_39_02-PM-1-150x150.png",
+		"direct_stream": "https://app.ashokadigital.net/hls/riotv/index.m3u8?token=hYUbjDHukIyAv3",
+		"isLocal": "true"
+    },
+    {
+        "id": "10064",
+        "title": "Jothibala TV",
+        "channel": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/10/ChatGPT-Image-Oct-12-2025-02_40_07-PM-1-150x150.png",
+		"direct_stream": "https://anywhere.pwisetthon.com/http://jothibalatv.phoenixcreations.online/jothibalatv/jothibalatv/playlist.m3u8",
+		"isLocal": "true"
+    }	
 ]

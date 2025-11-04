@@ -576,7 +576,7 @@
         let player;
         let currentChannel = null;
         let hideControlsTimeout = null;
-        let channelsData = [];
+        //let channelsData = [];
         let isPlaying = false;
         let isMuted = false;
 		let retryInterval = null; // For auto-retry timer
@@ -592,23 +592,26 @@
             };
         }
 
-        // Load channel data
-        async function loadChannelData() {
-            try {
-                const response = await fetch('channel_details.json');
-                if (!response.ok) throw new Error('Failed to load channels');
-                channelsData = await response.json();
-                return channelsData;
-            } catch (error) {
-                console.error('Error loading channels:', error);
-                return [];
-            }
+// Load channel data from Worker API
+async function loadChannelData(channelId) {
+    try {
+        const apiUrl = `https://tvapi.porus-in2012.workers.dev/?id=${channelId}`;
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) throw new Error('Failed to load channel data');
+        
+        const channelData = await response.json();
+        
+        if (channelData.error) {
+            throw new Error('Channel not found');
         }
-
-        // Find channel by ID
-        function findChannel(id) {
-            return channelsData.find(ch => ch.id === id);
-        }
+        
+        return channelData;
+    } catch (error) {
+        console.error('Error loading channel:', error);
+        throw error;
+    }
+}
 
         // Fetch stream details from API
         async function fetchStreamDetails(channelId) {
@@ -975,15 +978,14 @@ async function loadChannel(channelId) {
 
     showLoading();
 
-    try {
-        // Load channel data from JSON
-        await loadChannelData();
-        currentChannel = findChannel(channelId);
+try {
+    // Load channel data directly from Worker API using ID
+    currentChannel = await loadChannelData(channelId);
 
-        if (!currentChannel) {
-            showError('Channel not found');
-            return;
-        }
+    if (!currentChannel) {
+        showError('Channel not found');
+        return;
+    }
 
         // Update channel info
         updateChannelInfo(currentChannel);
@@ -1077,10 +1079,23 @@ function setupAutoRetry() {
                     licenseUrl: isDRM ? currentChannel.license_url : null,
                     title: currentChannel.title
                 };
-            } else {
-                // Fetch fresh stream URL from API
-                newStreamData = await fetchStreamDetails(currentChannel.id);
-            }
+} else {
+    // Fetch fresh channel data from Worker API
+    const freshChannelData = await loadChannelData(currentChannel.id);
+    
+    if (freshChannelData.direct_stream) {
+        const isDRM = freshChannelData.title.includes("*");
+        newStreamData = {
+            isDRM: isDRM,
+            streamUrl: freshChannelData.direct_stream,
+            licenseUrl: isDRM ? freshChannelData.license_url : null,
+            title: freshChannelData.title
+        };
+    } else {
+        // Fetch from secondary API
+        newStreamData = await fetchStreamDetails(currentChannel.id);
+    }
+}
 
             // Update stored stream data
             currentStreamData = newStreamData;
