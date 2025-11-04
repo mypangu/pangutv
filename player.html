@@ -49,25 +49,73 @@
             background: #000;
         }
 
-        /* JW Player Container */
-        #jwplayer-wrapper {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
+/* JW Player Container */
+#jwplayer-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
 
-        #jwplayer-container {
-            width: 100%;
-            height: 100%;
-        }
+#jwplayer-container {
+    width: 100%;
+    height: 100%;
+    pointer-events: none !important; /* CRITICAL: Block all clicks to player */
+}
 
-        /* Force stretch mode for video */
-        .jw-video {
-            object-fit: fill !important;
-        }
+/* Force all player elements to not receive pointer events */
+#jwplayer-container * {
+    pointer-events: none !important;
+}
+
+/* Clappr container - same treatment */
+#clappr-container {
+    width: 100%;
+    height: 100%;
+    pointer-events: none !important;
+}
+
+#clappr-container * {
+    pointer-events: none !important;
+}
+
+/* Native video element */
+#native-video {
+    pointer-events: none !important;
+}
+
+/* Force stretch mode for video */
+.jw-video {
+    object-fit: fill !important;
+    pointer-events: none !important;
+}
+
+/* Transparent Interaction Mask */
+#interaction-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 25; /* Above player (1) and buffering (25), below controls (50) */
+    background: transparent;
+    pointer-events: auto; /* ALWAYS accept clicks */
+    cursor: default;
+}
+
+/* When controls are visible, mask should allow clicks to controls */
+body:not(.hide-cursor) #interaction-mask {
+    pointer-events: none;
+}
+
+/* Ensure mask doesn't interfere when error or loading is showing */
+.error-screen.show ~ #interaction-mask,
+.loading-screen:not(.hidden) ~ #interaction-mask {
+    pointer-events: none;
+    display: none;
+}
 
         /* Loading Screen */
         .loading-screen {
@@ -121,7 +169,7 @@
     align-items: center;
     justify-content: center;
     background: transparent;
-    z-index: 25;
+    z-index: 23;
     pointer-events: none;
 }
 
@@ -493,7 +541,33 @@
 
 .clappr-container video {
     object-fit: fill !important;
-}		
+}	
+
+
+
+/* Transparent Interaction Mask */
+#interaction-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20; /* Above player (z-index: 1) but below controls (z-index: 50) */
+    background: transparent;
+    pointer-events: auto;
+}
+
+/* Hide mask when controls are visible */
+.controls-overlay:not(.hidden) ~ #interaction-mask,
+.top-bar:not(.hidden) ~ #interaction-mask {
+    pointer-events: none;
+}
+
+/* Ensure mask is hidden when error or loading screen is showing */
+.error-screen.show ~ #interaction-mask,
+.loading-screen:not(.hidden) ~ #interaction-mask {
+    pointer-events: none;
+}	
     </style>
 </head>
 <body>
@@ -527,10 +601,13 @@
             </div>
         </div>
 
-        <!-- JW Player -->
-        <div id="jwplayer-wrapper">
-            <div id="jwplayer-container"></div>
-        </div>
+<!-- JW Player -->
+<div id="jwplayer-wrapper">
+    <div id="jwplayer-container"></div>
+</div>
+
+<!-- NEW: Transparent interaction mask -->
+<div id="interaction-mask"></div>
 
         <!-- Controls Overlay -->
         <div class="controls-overlay" id="controlsOverlay">
@@ -583,6 +660,23 @@
 		let currentStreamData = null; // Store current stream data
 		let clapprPlayer = null; 
 		let isUsingClappr = false; 
+		
+// ============ ENVIRONMENT DETECTION ============
+function isLocalhost() {
+    return window.location.hostname === 'localhost' || 
+           window.location.hostname === '127.0.0.1' || 
+           window.location.hostname === '';
+}
+
+function getApiBaseUrl() {
+    if (isLocalhost()) {
+        // Local development - use local JSON file
+        return './channel_details.json'; // Will fetch from same directory as HTML
+    } else {
+        // Production - use Worker API
+        return 'https://tvapi.porus-in2012.workers.dev/';
+    }
+}		
 
         // Get URL parameters
         function getUrlParams() {
@@ -592,23 +686,62 @@
             };
         }
 
-// Load channel data from Worker API
+// Load channel data from Worker API / Local file
 async function loadChannelData(channelId) {
     try {
-        const apiUrl = `https://tvapi.porus-in2012.workers.dev/?id=${channelId}`;
-        const response = await fetch(apiUrl);
+        const baseUrl = getApiBaseUrl();
+        let channelData;
         
-        if (!response.ok) throw new Error('Failed to load channel data');
-        
-        const channelData = await response.json();
-        
-        if (channelData.error) {
-            throw new Error('Channel not found');
+        if (isLocalhost()) {
+            // LOCAL: Fetch entire JSON file and find channel by ID
+            console.log('🔧 LOCAL MODE: Fetching from local file');
+            const response = await fetch(baseUrl);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load local channels.json file');
+            }
+            
+            const allChannels = await response.json();
+            
+            // Find channel by ID
+            if (Array.isArray(allChannels)) {
+                channelData = allChannels.find(ch => ch.id === channelId);
+            } else if (allChannels.channels && Array.isArray(allChannels.channels)) {
+                channelData = allChannels.channels.find(ch => ch.id === channelId);
+            } else if (allChannels[channelId]) {
+                // Handle object format: { "channel_id": {...}, ... }
+                channelData = allChannels[channelId];
+            }
+            
+            if (!channelData) {
+                throw new Error(`Channel with ID "${channelId}" not found in local file`);
+            }
+            
+            console.log('✅ LOCAL: Channel found:', channelData.title);
+            
+        } else {
+            // PRODUCTION: Fetch from Worker API
+            console.log('🌐 PRODUCTION MODE: Fetching from Worker API');
+            const apiUrl = `${baseUrl}?id=${channelId}`;
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load channel data from API');
+            }
+            
+            channelData = await response.json();
+            
+            if (channelData.error) {
+                throw new Error('Channel not found in API');
+            }
+            
+            console.log('✅ PRODUCTION: Channel loaded:', channelData.title);
         }
         
         return channelData;
+        
     } catch (error) {
-        console.error('Error loading channel:', error);
+        console.error('❌ Error loading channel:', error);
         throw error;
     }
 }
@@ -1275,41 +1408,55 @@ function toggleMute() {
 function toggleFullscreen() {
     const container = document.getElementById('playerContainer');
     
-    if (!document.fullscreenElement) {
+    // iOS-specific handling
+    if (isIOS) {
+        handleIOSFullscreen();
+        return;
+    }
+    
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         // Entering fullscreen
-        container.requestFullscreen().then(() => {
-            console.log('Entered fullscreen');
-            
-            // Update fullscreen icons
-            document.getElementById('enterFsIcon').style.display = 'none';
-            document.getElementById('exitFsIcon').style.display = 'block';
-            
-            // On mobile, try to lock orientation to landscape
-            if (screen.orientation && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                screen.orientation.lock('landscape').then(() => {
-                    console.log('Orientation locked to landscape');
-                }).catch(err => {
-                    console.log('Orientation lock failed (may not be supported):', err);
-                });
-            }
-        }).catch(err => {
-            console.error('Fullscreen error:', err);
-        });
+        const requestFS = container.requestFullscreen || container.webkitRequestFullscreen || container.mozRequestFullScreen || container.msRequestFullscreen;
+        
+        if (requestFS) {
+            requestFS.call(container).then(() => {
+                console.log('Entered fullscreen');
+                updateFullscreenIcons(true);
+                lockOrientation();
+            }).catch(err => {
+                console.error('Fullscreen error:', err);
+            });
+        }
     } else {
         // Exiting fullscreen
-        document.exitFullscreen().then(() => {
-            console.log('Exited fullscreen');
-            
-            // Update fullscreen icons
-            document.getElementById('enterFsIcon').style.display = 'block';
-            document.getElementById('exitFsIcon').style.display = 'none';
-            
-            // Unlock orientation when exiting fullscreen
-            if (screen.orientation && screen.orientation.unlock) {
-                screen.orientation.unlock();
-                console.log('Orientation unlocked');
-            }
+        const exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+        
+        if (exitFS) {
+            exitFS.call(document).then(() => {
+                console.log('Exited fullscreen');
+                updateFullscreenIcons(false);
+                unlockOrientation();
+            });
+        }
+    }
+}
+
+function updateFullscreenIcons(isFullscreen) {
+    document.getElementById('enterFsIcon').style.display = isFullscreen ? 'none' : 'block';
+    document.getElementById('exitFsIcon').style.display = isFullscreen ? 'block' : 'none';
+}
+
+function lockOrientation() {
+    if (screen.orientation && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        screen.orientation.lock('landscape').catch(err => {
+            console.log('Orientation lock not supported:', err);
         });
+    }
+}
+
+function unlockOrientation() {
+    if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
     }
 }
 
@@ -1361,32 +1508,127 @@ function toggleFullscreen() {
             }
         });
 		
-// ============ UNIFIED TAP/CLICK HANDLING ============
+// ============ UNIFIED TAP/CLICK HANDLING WITH PROPER MASK ============
 let lastTap = 0;
+let lastClick = 0;
 let tapTimeout = null;
+let clickTimeout = null;
 let isTouchDevice = 'ontouchstart' in window;
+const interactionMask = document.getElementById('interaction-mask');
+
+// Detect iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+// Helper function to show controls
+function showControlsTemporarily() {
+    const controlsOverlay = document.getElementById('controlsOverlay');
+    const topBar = document.getElementById('topBar');
+    
+    controlsOverlay.classList.remove('hidden');
+    topBar.classList.remove('hidden');
+    document.body.classList.remove('hide-cursor');
+    
+    clearTimeout(hideControlsTimeout);
+    hideControlsTimeout = setTimeout(() => {
+        controlsOverlay.classList.add('hidden');
+        topBar.classList.add('hidden');
+        document.body.classList.add('hide-cursor');
+    }, 3000);
+}
+
+// Helper function to toggle controls
+function toggleControls() {
+    const controlsOverlay = document.getElementById('controlsOverlay');
+    const topBar = document.getElementById('topBar');
+    const isHidden = controlsOverlay.classList.contains('hidden');
+    
+    if (isHidden) {
+        showControlsTemporarily();
+    } else {
+        controlsOverlay.classList.add('hidden');
+        topBar.classList.add('hidden');
+        document.body.classList.add('hide-cursor');
+        clearTimeout(hideControlsTimeout);
+    }
+}
+
+// iOS-specific fullscreen handler
+function handleIOSFullscreen() {
+    let videoElement = null;
+    
+    // Check for Clappr
+    if (typeof clapprPlayer !== 'undefined' && clapprPlayer) {
+        videoElement = document.querySelector('#clappr-container video');
+    }
+    
+    // Check for native video
+    if (!videoElement) {
+        videoElement = document.getElementById('native-video');
+    }
+    
+    // Check for JW Player
+    if (!videoElement) {
+        videoElement = document.querySelector('#jwplayer-container video');
+    }
+    
+    if (videoElement) {
+        if (videoElement.webkitEnterFullscreen) {
+            videoElement.webkitEnterFullscreen();
+            console.log('iOS: Entered video fullscreen');
+        } else if (videoElement.requestFullscreen) {
+            videoElement.requestFullscreen();
+        }
+    } else {
+        const container = document.getElementById('playerContainer');
+        if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
+        } else if (container.requestFullscreen) {
+            container.requestFullscreen();
+        }
+    }
+}
 
 // For TOUCH devices (mobile/tablet)
 if (isTouchDevice) {
-    // Use playerContainer instead of jwplayer-wrapper for universal coverage
-    document.getElementById('playerContainer').addEventListener('touchend', (e) => {
-        // Ignore if clicking on controls/buttons
-        if (e.target.closest('.controls-overlay') || 
-            e.target.closest('.top-bar') || 
-            e.target.closest('button') ||
-            e.target.closest('[data-media-control]')) {  // Add Clappr controls check
-            return;
-        }
+    let touchStartTime = 0;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    
+    interactionMask.addEventListener('touchstart', (e) => {
+        touchStartTime = new Date().getTime();
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }, { passive: false });
+    
+    interactionMask.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         
         const currentTime = new Date().getTime();
         const tapLength = currentTime - lastTap;
+        const touchDuration = currentTime - touchStartTime;
         
-        if (tapLength < 300 && tapLength > 0) {
+        // Calculate if touch moved (swipe detection)
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const moveX = Math.abs(touchEndX - touchStartX);
+        const moveY = Math.abs(touchEndY - touchStartY);
+        
+        // Ignore if touch was too long or moved too much (swipe)
+        if (touchDuration > 500 || moveX > 30 || moveY > 30) {
+            return;
+        }
+        
+        if (tapLength < 400 && tapLength > 0) {
             // DOUBLE TAP detected
             clearTimeout(tapTimeout);
-            e.preventDefault();
             console.log('✅ Double tap - entering fullscreen');
-            toggleFullscreen();
+            
+            if (isIOS) {
+                handleIOSFullscreen();
+            } else {
+                toggleFullscreen();
+            }
             lastTap = 0;
         } else {
             // SINGLE TAP - toggle controls
@@ -1395,122 +1637,56 @@ if (isTouchDevice) {
             
             tapTimeout = setTimeout(() => {
                 console.log('✅ Single tap - toggling controls');
-                
-                const controlsOverlay = document.getElementById('controlsOverlay');
-                const topBar = document.getElementById('topBar');
-                const isHidden = controlsOverlay.classList.contains('hidden');
-                
-                if (isHidden) {
-                    controlsOverlay.classList.remove('hidden');
-                    topBar.classList.remove('hidden');
-                    document.body.classList.remove('hide-cursor');
-                    
-                    clearTimeout(hideControlsTimeout);
-                    hideControlsTimeout = setTimeout(() => {
-                        controlsOverlay.classList.add('hidden');
-                        topBar.classList.add('hidden');
-                        document.body.classList.add('hide-cursor');
-                    }, 1500);
-                } else {
-                    controlsOverlay.classList.add('hidden');
-                    topBar.classList.add('hidden');
-                    document.body.classList.add('hide-cursor');
-                    clearTimeout(hideControlsTimeout);
-                }
-            }, 300);
+                toggleControls();
+            }, 400);
         }
-    });
+    }, { passive: false });
     
     // Touch move for showing controls
-    document.getElementById('playerContainer').addEventListener('touchmove', (e) => {
-        // Ignore if on controls
-        if (e.target.closest('.controls-overlay') || 
-            e.target.closest('.top-bar') ||
-            e.target.closest('[data-media-control]')) {
-            return;
-        }
-        
-        const controlsOverlay = document.getElementById('controlsOverlay');
-        const topBar = document.getElementById('topBar');
-        
-        if (controlsOverlay.classList.contains('hidden')) {
-            controlsOverlay.classList.remove('hidden');
-            topBar.classList.remove('hidden');
-            document.body.classList.remove('hide-cursor');
-        }
-        
-        clearTimeout(hideControlsTimeout);
-        hideControlsTimeout = setTimeout(() => {
-            controlsOverlay.classList.add('hidden');
-            topBar.classList.add('hidden');
-            document.body.classList.add('hide-cursor');
-        }, 1500);
-    });
+    interactionMask.addEventListener('touchmove', (e) => {
+        showControlsTemporarily();
+    }, { passive: true });
 }
 
 // For DESKTOP (mouse)
 if (!isTouchDevice) {
     // Mouse movement shows controls
-    document.addEventListener('mousemove', () => {
-        const controlsOverlay = document.getElementById('controlsOverlay');
-        const topBar = document.getElementById('topBar');
-        
-        controlsOverlay.classList.remove('hidden');
-        topBar.classList.remove('hidden');
-        document.body.classList.remove('hide-cursor');
-        
-        clearTimeout(hideControlsTimeout);
-        hideControlsTimeout = setTimeout(() => {
-            controlsOverlay.classList.add('hidden');
-            topBar.classList.add('hidden');
-            document.body.classList.add('hide-cursor');
-        }, 1500);
+    interactionMask.addEventListener('mousemove', () => {
+        showControlsTemporarily();
     });
     
     // Single click toggles controls
-    document.getElementById('playerContainer').addEventListener('click', (e) => {
-        if (e.target.closest('.controls-overlay') || 
-            e.target.closest('.top-bar') || 
-            e.target.closest('button')) {
+    interactionMask.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const currentTime = new Date().getTime();
+        const clickLength = currentTime - lastClick;
+        
+        if (clickLength < 400 && clickLength > 0) {
+            // This is part of a double-click, ignore
+            clearTimeout(clickTimeout);
             return;
         }
         
-        const controlsOverlay = document.getElementById('controlsOverlay');
-        const topBar = document.getElementById('topBar');
-        const isHidden = controlsOverlay.classList.contains('hidden');
+        lastClick = currentTime;
+        clearTimeout(clickTimeout);
         
-        if (isHidden) {
-            controlsOverlay.classList.remove('hidden');
-            topBar.classList.remove('hidden');
-            document.body.classList.remove('hide-cursor');
-            
-            clearTimeout(hideControlsTimeout);
-            hideControlsTimeout = setTimeout(() => {
-                controlsOverlay.classList.add('hidden');
-                topBar.classList.add('hidden');
-                document.body.classList.add('hide-cursor');
-            }, 1500);
-        } else {
-            controlsOverlay.classList.add('hidden');
-            topBar.classList.add('hidden');
-            document.body.classList.add('hide-cursor');
-            clearTimeout(hideControlsTimeout);
-        }
+        clickTimeout = setTimeout(() => {
+            console.log('✅ Single click - toggling controls');
+            toggleControls();
+        }, 400);
     });
     
     // Double click for fullscreen
-    document.getElementById('playerContainer').addEventListener('dblclick', (e) => {
-        if (e.target.closest('.controls-overlay') || 
-            e.target.closest('.top-bar') || 
-            e.target.closest('button')) {
-            return;
-        }
-        
+    interactionMask.addEventListener('dblclick', (e) => {
         e.preventDefault();
+        e.stopPropagation();
+        clearTimeout(clickTimeout); // Cancel single click
         console.log('✅ Double click - entering fullscreen');
         toggleFullscreen();
     });
-}		
+}
 
         // Fullscreen change
         document.addEventListener('fullscreenchange', () => {

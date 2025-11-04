@@ -1983,13 +1983,22 @@
     },	
     {
         "platform": "iframe",
+        "id": "905",
+        "title": "KTV",
+        "channel": "Movies",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/02/ChatGPT-Image-May-27-2025-03_08_23-PM-150x150.png",
+		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream/6ae70edd4c1440379f5311e8fbddc7c1/KTVB_IN_index.mpd?keyId=426117d115b04497b0b0d425e8095184&key=aa751ae8a41ac6f87141734163ffe3b2"
+    },
+    {
+        "platform": "iframe",
         "id": "894",
         "title": "KTV HD",
         "channel": "Movies",
         "language": "Tamil",
         "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/KTV_HD.png",
 		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream/61477b4c8d8d45d5a49e044cc1dffc60/KTVHDB_IN_index.mpd?keyId=351e547391bb45cbac66d2cb9ec0c294&key=3bd646753f4903eee3b404646c7819d3"
-    },
+    },	
     {
         "platform": "iframe",
         "id": "725",
@@ -7499,6 +7508,15 @@
         "logo": "https://jiotvimages.cdn.jio.com/dare_images/images/Sun_Music_HD.png",
 		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream/d434796d90fa4dc9b7ecfacedbe683f1/SunMusicHDB_IN_index.mpd?keyId=b5a2c6d13b9748de9ceebc0a8adc8af3&key=e806fec1bf1c8a844216118c94bad020"
     },
+    {
+        "platform": "iframe",
+        "id": "909",
+        "title": "Sun Music",
+        "channel": "Music",
+        "language": "Tamil",
+        "logo": "https://oxolive.com/wp-content/uploads/2025/02/ChatGPT-Image-May-27-2025-03_15_28-PM-150x150.png",
+		"direct_stream": "https://southlive.porus-in2012.workers.dev/https://white-paper-38cb.keralive.workers.dev/livestream/585bb66e95c84ccea3f828c96b3567b5/SunMusicB_IN_index.mpd?keyId=21ddc14c4da94c079d4f4c343ecdcd80&key=5701bee4ee9b625d0c8ed7de032a7478"
+    },	
     {
         "platform": "iframe",
         "id": "3058",
